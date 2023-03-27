@@ -8,6 +8,10 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // ...
     // let transform = Matrix.multiply([...]);
     // return transform;
+
+    //Nper = Sper*SHper*R*T(-PRP)
+    //-Clip
+    //-Mper
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
