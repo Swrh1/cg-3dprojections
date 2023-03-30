@@ -6,18 +6,69 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
 
     // ...
-    // let transform = Matrix.multiply([...]);
+    //let transform = Matrix.multiply([...]);
     // return transform;
 
     //Nper = Sper*SHper*R*T(-PRP)
     //-Clip
     //-Mper
+
+    //CLIP is in the format = [left, right, bottom, top, near, far]
+
+
+    let n = (prp.subtract(srp)).normalize();
+    let u = (Matrix.multiply([vup, n])).normalize();
+    let v = Matrix.multiply([n,u]);
+
+    let cw = new Vector3((clip[0]-clip[1])/2, (clip[2]-clip[3])/2, -clip[4]);
+
+    let dop = cw;
+
+    let transform = new Matrix(4, 4);
+    mat4x4Translate(transform, -prp[0], -prp[1], -prp[2]);
+
+    let rotate = new Matrix(4,4);
+    rotate.values = [[u[0], u[1], u[2], 0],
+                     [v[0], v[1], v[2], 0],
+                     [n[0], n[1], n[2], 0],
+                     [0, 0, 0, 1]];
+
+    let shear = new Matrix(4,4);
+    let shx = -dop[0]/dop[2];
+    let shy = -dop[1]/dop[2];
+    mat4x4ShearXY(shear, shx, shy);
+
+    let sper = new Matrix(4,4);
+    let sperx = (2*clip[4])/((clip[1]-clip[0])*clip[5]);
+    let spery = (2*clip[4])/((clip[3]-clip[2])*clip[5]);
+    let sperz = 1/clip[5];
+    sper.values = [[sperx, 0, 0, 0],
+                   [0, spery, 0, 0],
+                   [0, 0, sperz, 0],
+                   [0, 0, 0, 1]];
+
+    let mper = new Matrix(4,4);
+    mper.values = [[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, -1, 0]];
+
+
+    nper = Matrix.multiply([sper, shear, rotate, translate]);
+
+    //multiply this by mper
+    //multiply each point by this
+
+    return 0;
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
 function mat4x4MPer() {
     let mper = new Matrix(4, 4);
-    // mper.values = ...;
+    mper.values = [[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, -1, 0]];
     return mper;
 }
 

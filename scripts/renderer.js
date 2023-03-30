@@ -23,6 +23,7 @@ class Renderer {
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+        console.log(mat4x4Perspective(0,0,0,0));
     }
 
     //
