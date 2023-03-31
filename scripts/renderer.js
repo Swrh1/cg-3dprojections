@@ -23,7 +23,6 @@ class Renderer {
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
-        console.log(mat4x4Perspective(0,0,0,0));
     }
 
     //
@@ -71,6 +70,7 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
+        //drawLine(0, 0, 100, 100);
     }
 
     // Get outcode for a vertex

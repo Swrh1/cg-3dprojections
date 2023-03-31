@@ -47,17 +47,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                    [0, 0, sperz, 0],
                    [0, 0, 0, 1]];
 
-    let mper = new Matrix(4,4);
-    mper.values = [[1, 0, 0, 0],
-                   [0, 1, 0, 0],
-                   [0, 0, 1, 0],
-                   [0, 0, -1, 0]];
-
-
-    nper = Matrix.multiply([sper, shear, rotate, translate]);
-
-    //multiply this by mper
-    //multiply each point by this
+    return Matrix.multiply([sper, shear, rotate, translate]);
 
     return 0;
 }
@@ -78,7 +68,6 @@ function mat4x4Viewport(width, height) {
     // viewport.values = ...;
     return viewport;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 // 4x4 Transform Matrices                                                         //
