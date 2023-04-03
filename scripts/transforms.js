@@ -16,26 +16,26 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     //CLIP is in the format = [left, right, bottom, top, near, far]
 
 
-    let n = (prp.subtract(srp)).normalize();
-    let u = (Matrix.multiply([vup, n])).normalize();
-    let v = Matrix.multiply([n,u]);
+    let n = (prp.subtract(srp));
+    n.normalize();
+    let u = (vup.cross(n));
+    u.normalize();
+    let v = n.cross(u);
 
     let cw = new Vector3((clip[0]-clip[1])/2, (clip[2]-clip[3])/2, -clip[4]);
-
     let dop = cw;
-
     let transform = new Matrix(4, 4);
-    mat4x4Translate(transform, -prp[0], -prp[1], -prp[2]);
+    mat4x4Translate(transform, -prp.x, -prp.y, -prp.z);
 
     let rotate = new Matrix(4,4);
-    rotate.values = [[u[0], u[1], u[2], 0],
-                     [v[0], v[1], v[2], 0],
-                     [n[0], n[1], n[2], 0],
+    rotate.values = [[u.x, u.y, u.z, 0],
+                     [v.x, v.y, v.z, 0],
+                     [n.x, n.y, n.z, 0],
                      [0, 0, 0, 1]];
 
     let shear = new Matrix(4,4);
-    let shx = -dop[0]/dop[2];
-    let shy = -dop[1]/dop[2];
+    let shx = -dop.x/dop.z;
+    let shy = -dop.y/dop.z;
     mat4x4ShearXY(shear, shx, shy);
 
     let sper = new Matrix(4,4);
@@ -47,9 +47,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                    [0, 0, sperz, 0],
                    [0, 0, 0, 1]];
 
-    return Matrix.multiply([sper, shear, rotate, translate]);
-
-    return 0;
+    return Matrix.multiply([sper, shear, rotate, transform]);
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
@@ -64,8 +62,12 @@ function mat4x4MPer() {
 
 // create a 4x4 matrix to translate/scale projected vertices to the viewport (window)
 function mat4x4Viewport(width, height) {
+    //TODO: Complete
     let viewport = new Matrix(4, 4);
-    // viewport.values = ...;
+    viewport.values = [[(width/2), 0, 0, (width/2)],
+                       [0, (height/2), 0, (height/2)],
+                       [0, 0, 1, 0],
+                       [0, 0, 0, 1]];
     return viewport;
 }
 
