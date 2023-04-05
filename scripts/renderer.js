@@ -18,6 +18,8 @@ class Renderer {
         this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
+        this.model = 0;
+        this.newpoints;
     }
 
     //
@@ -25,8 +27,20 @@ class Renderer {
         // TODO: update any transformations needed for animation
         let Nper = mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
         let MNper = Matrix.multiply([Nper, mat4x4MPer()]);
-        console.log(Nper);
+        let newpoints = [];
+        //console.log(Nper);
         console.log(MNper);
+        //console.log(this.scene.models[this.model].vertices);
+        this.scene.models[this.model].vertices.forEach(function(vertex) {
+            vertex = Matrix.multiply([MNper,vertex]);
+            //console.log(this.newpoints);
+            vertex.x = vertex.x/vertex.w;
+            vertex.y = vertex.y/vertex.w;
+            newpoints.push(vertex);
+        });
+        console.log(newpoints);
+        this.newpoints = newpoints;
+        //console.log(newpoints);
     }
 
     //
@@ -74,7 +88,8 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
-        this.drawLine(0, 0, 100, 100);
+        //this.drawLine(0, 0, 100, 100);
+        this.drawLine(200, 200, 201,201);
     }
 
     // Get outcode for a vertex
