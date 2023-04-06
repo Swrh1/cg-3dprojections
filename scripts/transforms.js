@@ -22,7 +22,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     u.normalize();
     let v = n.cross(u);
 
-    let cw = new Vector3((clip[0]-clip[1])/2, (clip[2]-clip[3])/2, -clip[4]);
+    let cw = new Vector3((clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -clip[4]);
     let dop = cw;
     let transform = new Matrix(4, 4);
     mat4x4Translate(transform, -prp.x, -prp.y, -prp.z);

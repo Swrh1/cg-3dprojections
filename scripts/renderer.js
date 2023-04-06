@@ -26,10 +26,8 @@ class Renderer {
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
         let Nper = mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
-        let MNper = Matrix.multiply([Nper, mat4x4MPer()]);
+        let MNper = Matrix.multiply([mat4x4MPer(), Nper]);
         let newpoints = [];
-        //console.log(Nper);
-        console.log(MNper);
         // console.log("TEST: ",this.scene.models[this.model].vertices);
         this.scene.models[this.model].vertices.forEach(function(vertex) {
             vertex = Matrix.multiply([MNper,vertex]);
@@ -38,9 +36,7 @@ class Renderer {
             vertex.y = vertex.y/vertex.w;
             newpoints.push(vertex);
         });
-        console.log(newpoints);
         this.newpoints = newpoints;
-        //console.log(newpoints);
     }
 
     //
@@ -168,10 +164,12 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
-
-        // this.drawLine(0, 0, 100, 100);
-        // this.drawLine(200, 200, 210, 210);
-        // this.drawLine(210, 210, 300, 310);
+        //this.drawLine(0, 0, 100, 100);
+        this.newpoints.forEach(element => {
+            element = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height),element]);
+            console.log(element.x,element.y,element.z, element.w);
+            this.drawLine(element.x,element.y,element.x+1,element.y+1);
+        });
     }
 
     // Get outcode for a vertex
