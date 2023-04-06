@@ -30,7 +30,7 @@ class Renderer {
         let newpoints = [];
         //console.log(Nper);
         console.log(MNper);
-        //console.log(this.scene.models[this.model].vertices);
+        // console.log("TEST: ",this.scene.models[this.model].vertices);
         this.scene.models[this.model].vertices.forEach(function(vertex) {
             vertex = Matrix.multiply([MNper,vertex]);
             //console.log(this.newpoints);
@@ -78,7 +78,87 @@ class Renderer {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         console.log('draw()');
+        console.log("Whole thing", this.scene.models);
 
+        let clipOrigin = this.scene.view.clip;
+        console.log("Clip borders: ",clipOrigin);
+
+        //z_min = -near/far
+        let zmin1 = -(clipOrigin[4]) / clipOrigin[5];
+
+        let toDraw = [];
+        let toClip = [];
+
+        // Instructions: 
+        // For each model
+        //   * For each vertex
+        //     * transform endpoints to canonical view volume
+        //   * For each line segment in each edge
+        //     * clip in 3D
+        //     * project to 2D
+        //     * translate/scale to viewport (i.e. window)
+        //     * draw line
+
+        // For each model
+        this.scene.models.forEach(function(theModel){
+            console.log("Model ", theModel);
+
+        //   * For each vertex
+            theModel.vertices.forEach(function(theVertex){
+                console.log("Vertex: ", theVertex);
+        //     * transform endpoints to canonical view volume
+                // idk what that means
+            });
+
+        //   * For each line segment in each edge
+            theModel.edges.forEach(function(theEdge){
+                console.log("Edge: ", theEdge);
+
+        //     * clip in 3D
+                // Attempting to get the lines to be able to clip them
+                for(let i = 0; i<theEdge.length; i++){
+                    if(i!=theEdge.length-1){
+
+                        let pt0Init = Vector4(theModel.vertices[theEdge[i]].data[0],
+                            theModel.vertices[theEdge[i]].data[1],
+                            theModel.vertices[theEdge[i]].data[2]);
+                        let pt1Init = Vector4(theModel.vertices[theEdge[i+1]].data[0],
+                            theModel.vertices[theEdge[i+1]].data[1],
+                            theModel.vertices[theEdge[i+1]].data[2]);
+                        // creates a line with the format expected by clipLinePerspective()
+                        let newLine = {pt0: pt0Init, 
+                            pt1: pt1Init};
+
+                        toClip.push([newLine]);
+                        console.log("newLine: ", newLine)
+
+                        console.log("ToClip: ", toClip[0][0])
+                        
+                        
+                         
+                        
+                        // toDraw.push([theModel.vertices[i].data[0],theModel.vertices[i].data[1], theModel.vertices[i+1].data[0], theModel.vertices[i+1].data[1]])
+                    }
+                }
+
+            });
+        //     * project to 2D - not done yet
+        //     * translate/scale to viewport (i.e. window) - not done yet
+        //     * draw line - not done yet
+        });
+
+        /* Testing to try and get the lines to clip */
+        console.log("BEFORE ", toClip[0][0]);
+
+        for(let i=0; i<toClip.length; i++){
+            toClip[i] = this.clipLinePerspective(toClip[i][0], zmin1);
+        }
+        console.log("AFTER  ", toClip);
+
+        for(let i=0; i<toDraw.length; i++){
+            this.drawLine(toDraw[i][0], toDraw[i][1], toDraw[i][2], toDraw[i][3])
+        }
+        
         // TODO: implement drawing here!
         // For each model
         //   * For each vertex
@@ -88,8 +168,10 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
-        //this.drawLine(0, 0, 100, 100);
-        this.drawLine(200, 200, 201,201);
+
+        // this.drawLine(0, 0, 100, 100);
+        // this.drawLine(200, 200, 210, 210);
+        // this.drawLine(210, 210, 300, 310);
     }
 
     // Get outcode for a vertex
@@ -122,235 +204,234 @@ class Renderer {
     //             or null (if line is completely outside view volume)
     // line:         object {pt0: Vector4, pt1: Vector4}
     // z_min:        float (near clipping plane in canonical view volume)
+    clipLinePerspective(line, z_min) {
+        let result = null;
+        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
+        let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+        let out0 = this.outcodePerspective(p0, z_min);
+        let out1 = this.outcodePerspective(p1, z_min);
+        // TODO: implement clipping here!
+
     
-clipLinePerspective(line, z_min) {
-    let result = null;
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
-    let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
-    let out0 = outcodePerspective(p0, z_min);
-    let out1 = outcodePerspective(p1, z_min);
-    // TODO: implement clipping here!
+        if((out0 | out1) == 0){
+            // trivial accept, bitwise or the outcodes, if 0, then accept.
+            result = line;
+        }else if((out0 & out1) != 0){
+            // trivial reject, bitwise and the ouctodes, if not 0, then reject.
+            return null;
+        }else{
+            // need to, ya know, figure it out.
+            // Starting with out0
 
-   
-    if((out0 | out1) == 0){
-        // trivial accept, bitwise or the outcodes, if 0, then accept.
-        result = line;
-    }else if((out0 & out1) != 0){
-        // trivial reject, bitwise and the ouctodes, if not 0, then reject.
-        return null;
-    }else{
-        // need to, ya know, figure it out.
-        // Starting with out0
+            /*
+            const LEFT =   32; // binary 100000
+            const RIGHT =  16; // binary 010000
+            const BOTTOM = 8;  // binary 001000
+            const TOP =    4;  // binary 000100
+            const FAR =    2;  // binary 000010
+            const NEAR =   1;  // binary 000001
+            */
 
-        /*
-        const LEFT =   32; // binary 100000
-        const RIGHT =  16; // binary 010000
-        const BOTTOM = 8;  // binary 001000
-        const TOP =    4;  // binary 000100
-        const FAR =    2;  // binary 000010
-        const NEAR =   1;  // binary 000001
-        */
+            let p0C = p0;
+            let p1C= p1;
+            // convert out0 to a string binary, then loop until there isn't a 1 in the outcode
+            while(out0.toString(redix).indexOf('1') != -1){
+                let newOutcode = out0.toString(redix);
+                // pick a side, the first occurance of 1, and clip the line against that, then continue
+                let side = newOutcode.indexOf('1');
+                let dx = p1C.x - p0C.x;
+                let dy = p1C.y - p0C.y;
+                let dz = p1C.z - p0C.z;
+                if(side == 0){
+                    // LEFT case
+                    // know the x and the z, find the y
+                    // x = p0C.x + T * dx
+                    // y = p0C.y + T * dy
+                    // z = p0C.z + T * dz
 
-        let p0C = p0;
-        let p1C= p1;
-        // convert out0 to a string binary, then loop until there isn't a 1 in the outcode
-        while(out0.toString(redix).indexOf('1') != -1){
-            let newOutcode = out0.toString(redix);
-            // pick a side, the first occurance of 1, and clip the line against that, then continue
-            let side = newOutcode.indexOf('1');
-            let dx = p1C.x - p0C.x;
-            let dy = p1C.y - p0C.y;
-            let dz = p1C.z - p0C.z;
-            if(side == 0){
-                // LEFT case
-                // know the x and the z, find the y
-                // x = p0C.x + T * dx
-                // y = p0C.y + T * dy
-                // z = p0C.z + T * dz
+                    // leftT = (-p0C.x + p0C.z)/(dx - dz)
 
-                // leftT = (-p0C.x + p0C.z)/(dx - dz)
+                    // TODO: question about bounding planes. It is perspective, am I doing the order correctly?
+                    p0C.x = p0C.z;
 
-                // TODO: question about bounding planes. It is perspective, am I doing the order correctly?
-                p0C.x = p0C.z;
+                    let leftT = (-p0C.x + p0C.z)/(dx - dz);
+                    p0C.y = p0C.y + (leftT*dy);
 
-                let leftT = (-p0C.x + p0C.z)/(dx - dz);
-                p0C.y = p0C.y + (leftT*dy);
+                }else if (side == 1){
+                    // RIGHT case
+                    // know the x and the z, find the y
+                    // x = p0C.x + T * dx
+                    // y = p0C.y + T * dy
+                    // z = p0C.z + T * dz
 
-            }else if (side == 1){
-                // RIGHT case
-                // know the x and the z, find the y
-                // x = p0C.x + T * dx
-                // y = p0C.y + T * dy
-                // z = p0C.z + T * dz
+                    // rightT = (p0C.x + p0C.z)/(-dx - dz)
+                    p0C.x = -p0C.z;
 
-                // rightT = (p0C.x + p0C.z)/(-dx - dz)
-                p0C.x = -p0C.z;
+                    let rightT = (p0C.x + p0C.z)/(-dx - dz);
+                    p0C.y = p0C.y + (leftT*dy);
 
-                let rightT = (p0C.x + p0C.z)/(-dx - dz);
-                p0C.y = p0C.y + (leftT*dy);
+                }else if (side == 2){
+                    // BOTTOM case
+                    // know the y and the z, find the x
+                    // x = p0C.x + T * dx
+                    // y = p0C.y + T * dy
+                    // z = p0C.z + T * dz
 
-            }else if (side == 2){
-                // BOTTOM case
-                // know the y and the z, find the x
-                // x = p0C.x + T * dx
-                // y = p0C.y + T * dy
-                // z = p0C.z + T * dz
+                    // bottomT = (-p0C.y + p0C.z)/(dy - dz)
+                    p0C.y = p0C.z;
 
-                // bottomT = (-p0C.y + p0C.z)/(dy - dz)
-                p0C.y = p0C.z;
-
-                let bottomT = (-p0C.y + p0C.z)/(dy - dz);
-                p0C.x = p0C.x + (bottomT*dx);
+                    let bottomT = (-p0C.y + p0C.z)/(dy - dz);
+                    p0C.x = p0C.x + (bottomT*dx);
 
 
-            }else if (side == 3){
-                // TOP case
-                // know the y and the z, find the x
-                // x = p0C.x + T * dx
-                // y = p0C.y + T * dy
-                // z = p0C.z + T * dz
+                }else if (side == 3){
+                    // TOP case
+                    // know the y and the z, find the x
+                    // x = p0C.x + T * dx
+                    // y = p0C.y + T * dy
+                    // z = p0C.z + T * dz
 
-                // topT = (p0C.y + p0C.z)/(-dy - dz)
-                p0C.y = -p0C.z;
+                    // topT = (p0C.y + p0C.z)/(-dy - dz)
+                    p0C.y = -p0C.z;
 
-                let topT = (p0C.y + p0C.z)/(-dy - dz);
-                p0C.x = p0C.x + (topT*dx);
+                    let topT = (p0C.y + p0C.z)/(-dy - dz);
+                    p0C.x = p0C.x + (topT*dx);
 
-            }else if (side == 4){
-                // FAR case
-                // know the y and the x, find the z
-                // x = p0C.x + T * dx
-                // y = p0C.y + T * dy
-                // z = p0C.z + T * dz
+                }else if (side == 4){
+                    // FAR case
+                    // know the y and the x, find the z
+                    // x = p0C.x + T * dx
+                    // y = p0C.y + T * dy
+                    // z = p0C.z + T * dz
 
-                // farT = (-p0C.z - 1)/(dz)
-                p0C.z = -1;
+                    // farT = (-p0C.z - 1)/(dz)
+                    p0C.z = -1;
 
-                let farT = (-p0C.z - 1)/(dz);
-                p0C.z = p0C.z + (farT*dz);
+                    let farT = (-p0C.z - 1)/(dz);
+                    p0C.z = p0C.z + (farT*dz);
 
-            }else if (side == 5){
-                // NEAR case
-                // know the y and the x, find the z
-                // x = p0C.x + T * dx
-                // y = p0C.y + T * dy
-                // z = p0C.z + T * dz
+                }else if (side == 5){
+                    // NEAR case
+                    // know the y and the x, find the z
+                    // x = p0C.x + T * dx
+                    // y = p0C.y + T * dy
+                    // z = p0C.z + T * dz
 
-                // nearT = (p0C.z - z_min)/(-dz)
-                p0C.z = z_min;
+                    // nearT = (p0C.z - z_min)/(-dz)
+                    p0C.z = z_min;
 
-                let nearT = (p0C.z - z_min)/(-dz);
-                p0C.z = p0C.z + (nearT*dz);
-               
+                    let nearT = (p0C.z - z_min)/(-dz);
+                    p0C.z = p0C.z + (nearT*dz);
+                
+                }
+                out0 = out0.replace("1", "0");
             }
-            out0 = out0.replace("1", "0");
-        }
 
-        while(out1.toString(redix).indexOf('1') != -1){
-            let newOutcode = out1.toString(redix);
-            // pick a side, the first occurrence of 1, and clip the line against that, then continue
-            let side = newOutcode.indexOf('1');
-            let dx = p1C.x - p1C.x;
-            let dy = p1C.y - p1C.y;
-            let dz = p1C.z - p1C.z;
-            if(side == 0){
-                // LEFT case
-                // know the x and the z, find the y
-                // x = p1C.x + T * dx
-                // y = p1C.y + T * dy
-                // z = p1C.z + T * dz
+            while(out1.toString(redix).indexOf('1') != -1){
+                let newOutcode = out1.toString(redix);
+                // pick a side, the first occurrence of 1, and clip the line against that, then continue
+                let side = newOutcode.indexOf('1');
+                let dx = p1C.x - p1C.x;
+                let dy = p1C.y - p1C.y;
+                let dz = p1C.z - p1C.z;
+                if(side == 0){
+                    // LEFT case
+                    // know the x and the z, find the y
+                    // x = p1C.x + T * dx
+                    // y = p1C.y + T * dy
+                    // z = p1C.z + T * dz
 
-                // leftT = (-p1C.x + p1C.z)/(dx - dz)
+                    // leftT = (-p1C.x + p1C.z)/(dx - dz)
 
-                // TODO: question about bounding planes. It is perspective, am I doing the order correctly?
-                p1C.x = p1C.z;
+                    // TODO: question about bounding planes. It is perspective, am I doing the order correctly?
+                    p1C.x = p1C.z;
 
-                let leftT = (-p1C.x + p1C.z)/(dx - dz);
-                p1C.y = p1C.y + (leftT*dy);
+                    let leftT = (-p1C.x + p1C.z)/(dx - dz);
+                    p1C.y = p1C.y + (leftT*dy);
 
-            }else if (side == 1){
-                // RIGHT case
-                // know the x and the z, find the y
-                // x = p1C.x + T * dx
-                // y = p1C.y + T * dy
-                // z = p1C.z + T * dz
+                }else if (side == 1){
+                    // RIGHT case
+                    // know the x and the z, find the y
+                    // x = p1C.x + T * dx
+                    // y = p1C.y + T * dy
+                    // z = p1C.z + T * dz
 
-                // rightT = (p1C.x + p1C.z)/(-dx - dz)
-                p1C.x = -p1C.z;
+                    // rightT = (p1C.x + p1C.z)/(-dx - dz)
+                    p1C.x = -p1C.z;
 
-                let rightT = (p1C.x + p1C.z)/(-dx - dz);
-                p1C.y = p1C.y + (leftT*dy);
+                    let rightT = (p1C.x + p1C.z)/(-dx - dz);
+                    p1C.y = p1C.y + (leftT*dy);
 
-            }else if (side == 2){
-                // BOTTOM case
-                // know the y and the z, find the x
-                // x = p1C.x + T * dx
-                // y = p1C.y + T * dy
-                // z = p1C.z + T * dz
+                }else if (side == 2){
+                    // BOTTOM case
+                    // know the y and the z, find the x
+                    // x = p1C.x + T * dx
+                    // y = p1C.y + T * dy
+                    // z = p1C.z + T * dz
 
-                // bottomT = (-p1C.y + p1C.z)/(dy - dz)
-                p1C.y = p1C.z;
+                    // bottomT = (-p1C.y + p1C.z)/(dy - dz)
+                    p1C.y = p1C.z;
 
-                let bottomT = (-p1C.y + p1C.z)/(dy - dz);
-                p1C.x = p1C.x + (bottomT*dx);
+                    let bottomT = (-p1C.y + p1C.z)/(dy - dz);
+                    p1C.x = p1C.x + (bottomT*dx);
 
 
-            }else if (side == 3){
-                // TOP case
-                // know the y and the z, find the x
-                // x = p1C.x + T * dx
-                // y = p1C.y + T * dy
-                // z = p1C.z + T * dz
+                }else if (side == 3){
+                    // TOP case
+                    // know the y and the z, find the x
+                    // x = p1C.x + T * dx
+                    // y = p1C.y + T * dy
+                    // z = p1C.z + T * dz
 
-                // topT = (p1C.y + p1C.z)/(-dy - dz)
-                p1C.y = -p1C.z;
+                    // topT = (p1C.y + p1C.z)/(-dy - dz)
+                    p1C.y = -p1C.z;
 
-                let topT = (p1C.y + p1C.z)/(-dy - dz);
-                p1C.x = p1C.x + (topT*dx);
+                    let topT = (p1C.y + p1C.z)/(-dy - dz);
+                    p1C.x = p1C.x + (topT*dx);
 
-            }else if (side == 4){
-                // FAR case
-                // know the y and the x, find the z
-                // x = p1C.x + T * dx
-                // y = p1C.y + T * dy
-                // z = p1C.z + T * dz
+                }else if (side == 4){
+                    // FAR case
+                    // know the y and the x, find the z
+                    // x = p1C.x + T * dx
+                    // y = p1C.y + T * dy
+                    // z = p1C.z + T * dz
 
-                // farT = (-p1C.z - 1)/(dz)
-                p1C.z = -1;
+                    // farT = (-p1C.z - 1)/(dz)
+                    p1C.z = -1;
 
-                let farT = (-p1C.z - 1)/(dz);
-                p1C.z = p1C.z + (farT*dz);
+                    let farT = (-p1C.z - 1)/(dz);
+                    p1C.z = p1C.z + (farT*dz);
 
-            }else if (side == 5){
-                // NEAR case
-                // know the y and the x, find the z
-                // x = p1C.x + T * dx
-                // y = p1C.y + T * dy
-                // z = p1C.z + T * dz
+                }else if (side == 5){
+                    // NEAR case
+                    // know the y and the x, find the z
+                    // x = p1C.x + T * dx
+                    // y = p1C.y + T * dy
+                    // z = p1C.z + T * dz
 
-                // nearT = (p1C.z - z_min)/(-dz)
-                p1C.z = z_min;
+                    // nearT = (p1C.z - z_min)/(-dz)
+                    p1C.z = z_min;
 
-                let nearT = (p1C.z - z_min)/(-dz);
-                p1C.z = p1C.z + (nearT*dz);
-               
+                    let nearT = (p1C.z - z_min)/(-dz);
+                    p1C.z = p1C.z + (nearT*dz);
+                
+                }
+                out1 = out1.replace("1", "0");
             }
-            out1 = out1.replace("1", "0");
+            // All outcodes have been correctly handled.
+            line.p0 = p0c;
+            line.p1 = p1c;
+            result = line;
         }
-        // All outcodes have been correctly handled.
-        line.p0 = p0c;
-        line.p1 = p1c;
-        result = line;
+    
+    
+
+
+
+
+    
+        return result;
     }
-   
-   
-
-
-
-
-   
-    return result;
-}
 
 
     //
