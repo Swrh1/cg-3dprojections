@@ -64,8 +64,8 @@ function mat4x4MPer() {
 function mat4x4Viewport(width, height) {
     //TODO: Complete
     let viewport = new Matrix(4, 4);
-    viewport.values = [[(width/2), 0, 0, (width/2)],
-                       [0, (height/2), 0, (height/2)],
+    viewport.values = [[width / 2, 0, 0, width / 2],
+                       [0, height / 2, 0, height / 2],
                        [0, 0, 1, 0],
                        [0, 0, 0, 1]];
     return viewport;

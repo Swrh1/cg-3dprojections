@@ -28,14 +28,22 @@ class Renderer {
         let Nper = mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
         let MNper = Matrix.multiply([mat4x4MPer(), Nper]);
         let newpoints = [];
+
         // console.log("TEST: ",this.scene.models[this.model].vertices);
         this.scene.models[this.model].vertices.forEach(function(vertex) {
             vertex = Matrix.multiply([MNper,vertex]);
             //console.log(this.newpoints);
-            vertex.x = vertex.x/vertex.w;
-            vertex.y = vertex.y/vertex.w;
+            vertex.x = (vertex.x/vertex.w)+1;
+            vertex.y = (vertex.y/vertex.w)+1;
             newpoints.push(vertex);
         });
+        let temps = new Matrix(4,4);
+        mat4x4Scale(temps,this.canvas.width/2,this.canvas.height/2,1);
+        for(let i = 0;i<newpoints.length;i++)
+        {
+            console.log(newpoints[i]);
+            newpoints[i] = Matrix.multiply([temps,newpoints[i]]);
+        }
         this.newpoints = newpoints;
     }
 
@@ -166,8 +174,6 @@ class Renderer {
         //     * draw line
         //this.drawLine(0, 0, 100, 100);
         this.newpoints.forEach(element => {
-            element = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height),element]);
-            console.log(element.x,element.y,element.z, element.w);
             this.drawLine(element.x,element.y,element.x+1,element.y+1);
         });
     }
@@ -421,13 +427,6 @@ class Renderer {
             line.p1 = p1c;
             result = line;
         }
-    
-    
-
-
-
-
-    
         return result;
     }
 
