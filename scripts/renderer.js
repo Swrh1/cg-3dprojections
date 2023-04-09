@@ -1,9 +1,9 @@
-const LEFT =   32; // binary 100000
-const RIGHT =  16; // binary 010000
+const LEFT = 32; // binary 100000
+const RIGHT = 16; // binary 010000
 const BOTTOM = 8;  // binary 001000
-const TOP =    4;  // binary 000100
-const FAR =    2;  // binary 000010
-const NEAR =   1;  // binary 000001
+const TOP = 4;  // binary 000100
+const FAR = 2;  // binary 000010
+const NEAR = 1;  // binary 000001
 const FLOAT_EPSILON = 0.000001;
 
 class Renderer {
@@ -24,54 +24,34 @@ class Renderer {
 
     //
     updateTransforms(time, delta_time) {
-        // TODO: update any transformations needed for animation
-        let Nper = mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
-        let MNper = Matrix.multiply([mat4x4MPer(), Nper]);
-        let newpoints = [];
-
-        // console.log("TEST: ",this.scene.models[this.model].vertices);
-        this.scene.models[this.model].vertices.forEach(function(vertex) {
-            vertex = Matrix.multiply([MNper,vertex]);
-            //console.log(this.newpoints);
-            vertex.x = (vertex.x/vertex.w)+1;
-            vertex.y = (vertex.y/vertex.w)+1;
-            newpoints.push(vertex);
-        });
-        let temps = new Matrix(4,4);
-        mat4x4Scale(temps,this.canvas.width/2,this.canvas.height/2,1);
-        for(let i = 0;i<newpoints.length;i++)
-        {
-            console.log(newpoints[i]);
-            newpoints[i] = Matrix.multiply([temps,newpoints[i]]);
-        }
-        this.newpoints = newpoints;
+        
     }
 
     //
     rotateLeft() {
 
     }
-    
+
     //
     rotateRight() {
 
     }
-    
+
     //
     moveLeft() {
 
     }
-    
+
     //
     moveRight() {
 
     }
-    
+
     //
     moveBackward() {
 
     }
-    
+
     //
     moveForward() {
 
@@ -81,11 +61,27 @@ class Renderer {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // TODO: update any transformations needed for animation
+        let Nper = mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
+        //do clipping here
+        let MNper = Matrix.multiply([mat4x4MPer(), Nper]);
+        let newpoints = [];
+
+        this.scene.models[this.model].vertices.forEach(function (vertex) {
+            vertex = Matrix.multiply([MNper, vertex]);
+            vertex.scale((1/vertex.w));
+            newpoints.push(vertex);
+        });
+        for (let i = 0; i < newpoints.length; i++) {
+            console.log(newpoints[i]);
+            newpoints[i] = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height), newpoints[i]]);
+        }
+
         console.log('draw()');
         console.log("Whole thing", this.scene.models);
 
         let clipOrigin = this.scene.view.clip;
-        console.log("Clip borders: ",clipOrigin);
+        console.log("Clip borders: ", clipOrigin);
 
         //z_min = -near/far
         let zmin1 = -(clipOrigin[4]) / clipOrigin[5];
@@ -104,65 +100,67 @@ class Renderer {
         //     * draw line
 
         // For each model
-        this.scene.models.forEach(function(theModel){
+        this.scene.models.forEach(function (theModel) {
             console.log("Model ", theModel);
 
-        //   * For each vertex
-            theModel.vertices.forEach(function(theVertex){
+            //   * For each vertex
+            theModel.vertices.forEach(function (theVertex) {
                 console.log("Vertex: ", theVertex);
-        //     * transform endpoints to canonical view volume
+                //     * transform endpoints to canonical view volume
                 // idk what that means
             });
 
-        //   * For each line segment in each edge
-            theModel.edges.forEach(function(theEdge){
+            //   * For each line segment in each edge
+            theModel.edges.forEach(function (theEdge) {
                 console.log("Edge: ", theEdge);
 
-        //     * clip in 3D
+                //     * clip in 3D
                 // Attempting to get the lines to be able to clip them
-                for(let i = 0; i<theEdge.length; i++){
-                    if(i!=theEdge.length-1){
+                for (let i = 0; i < theEdge.length; i++) {
+                    if (i != theEdge.length - 1) {
 
                         let pt0Init = Vector4(theModel.vertices[theEdge[i]].data[0],
                             theModel.vertices[theEdge[i]].data[1],
                             theModel.vertices[theEdge[i]].data[2]);
-                        let pt1Init = Vector4(theModel.vertices[theEdge[i+1]].data[0],
-                            theModel.vertices[theEdge[i+1]].data[1],
-                            theModel.vertices[theEdge[i+1]].data[2]);
+                        let pt1Init = Vector4(theModel.vertices[theEdge[i + 1]].data[0],
+                            theModel.vertices[theEdge[i + 1]].data[1],
+                            theModel.vertices[theEdge[i + 1]].data[2]);
                         // creates a line with the format expected by clipLinePerspective()
-                        let newLine = {pt0: pt0Init, 
-                            pt1: pt1Init};
+                        let newLine = {
+                            pt0: pt0Init,
+                            pt1: pt1Init
+                        };
 
                         toClip.push([newLine]);
                         console.log("newLine: ", newLine)
 
                         console.log("ToClip: ", toClip[0][0])
-                        
-                        
-                         
-                        
+
+
+
+
                         // toDraw.push([theModel.vertices[i].data[0],theModel.vertices[i].data[1], theModel.vertices[i+1].data[0], theModel.vertices[i+1].data[1]])
                     }
                 }
 
             });
-        //     * project to 2D - not done yet
-        //     * translate/scale to viewport (i.e. window) - not done yet
-        //     * draw line - not done yet
+            //     * project to 2D - not done yet
+            //     * translate/scale to viewport (i.e. window) - not done yet
+            //     * draw line - not done yet
         });
 
         /* Testing to try and get the lines to clip */
         console.log("BEFORE ", toClip[0][0]);
 
-        for(let i=0; i<toClip.length; i++){
+        for (let i = 0; i < toClip.length; i++) {
             toClip[i] = this.clipLinePerspective(toClip[i][0], zmin1);
         }
         console.log("AFTER  ", toClip);
 
-        for(let i=0; i<toDraw.length; i++){
+        for (let i = 0; i < toDraw.length; i++) {
             this.drawLine(toDraw[i][0], toDraw[i][1], toDraw[i][2], toDraw[i][3])
         }
-        
+
         // TODO: implement drawing here!
         // For each model
         //   * For each vertex
@@ -173,8 +171,8 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
         //this.drawLine(0, 0, 100, 100);
-        this.newpoints.forEach(element => {
-            this.drawLine(element.x,element.y,element.x+1,element.y+1);
+        newpoints.forEach(element => {
+            this.drawLine(element.x, element.y, element.x + 1, element.y + 1);
         });
     }
 
@@ -216,14 +214,14 @@ class Renderer {
         let out1 = this.outcodePerspective(p1, z_min);
         // TODO: implement clipping here!
 
-    
-        if((out0 | out1) == 0){
+
+        if ((out0 | out1) == 0) {
             // trivial accept, bitwise or the outcodes, if 0, then accept.
             result = line;
-        }else if((out0 & out1) != 0){
+        } else if ((out0 & out1) != 0) {
             // trivial reject, bitwise and the ouctodes, if not 0, then reject.
             return null;
-        }else{
+        } else {
             // need to, ya know, figure it out.
             // Starting with out0
 
@@ -237,16 +235,16 @@ class Renderer {
             */
 
             let p0C = p0;
-            let p1C= p1;
+            let p1C = p1;
             // convert out0 to a string binary, then loop until there isn't a 1 in the outcode
-            while(out0.toString(redix).indexOf('1') != -1){
+            while (out0.toString(redix).indexOf('1') != -1) {
                 let newOutcode = out0.toString(redix);
                 // pick a side, the first occurance of 1, and clip the line against that, then continue
                 let side = newOutcode.indexOf('1');
                 let dx = p1C.x - p0C.x;
                 let dy = p1C.y - p0C.y;
                 let dz = p1C.z - p0C.z;
-                if(side == 0){
+                if (side == 0) {
                     // LEFT case
                     // know the x and the z, find the y
                     // x = p0C.x + T * dx
@@ -258,10 +256,10 @@ class Renderer {
                     // TODO: question about bounding planes. It is perspective, am I doing the order correctly?
                     p0C.x = p0C.z;
 
-                    let leftT = (-p0C.x + p0C.z)/(dx - dz);
-                    p0C.y = p0C.y + (leftT*dy);
+                    let leftT = (-p0C.x + p0C.z) / (dx - dz);
+                    p0C.y = p0C.y + (leftT * dy);
 
-                }else if (side == 1){
+                } else if (side == 1) {
                     // RIGHT case
                     // know the x and the z, find the y
                     // x = p0C.x + T * dx
@@ -271,10 +269,10 @@ class Renderer {
                     // rightT = (p0C.x + p0C.z)/(-dx - dz)
                     p0C.x = -p0C.z;
 
-                    let rightT = (p0C.x + p0C.z)/(-dx - dz);
-                    p0C.y = p0C.y + (leftT*dy);
+                    let rightT = (p0C.x + p0C.z) / (-dx - dz);
+                    p0C.y = p0C.y + (leftT * dy);
 
-                }else if (side == 2){
+                } else if (side == 2) {
                     // BOTTOM case
                     // know the y and the z, find the x
                     // x = p0C.x + T * dx
@@ -284,11 +282,11 @@ class Renderer {
                     // bottomT = (-p0C.y + p0C.z)/(dy - dz)
                     p0C.y = p0C.z;
 
-                    let bottomT = (-p0C.y + p0C.z)/(dy - dz);
-                    p0C.x = p0C.x + (bottomT*dx);
+                    let bottomT = (-p0C.y + p0C.z) / (dy - dz);
+                    p0C.x = p0C.x + (bottomT * dx);
 
 
-                }else if (side == 3){
+                } else if (side == 3) {
                     // TOP case
                     // know the y and the z, find the x
                     // x = p0C.x + T * dx
@@ -298,10 +296,10 @@ class Renderer {
                     // topT = (p0C.y + p0C.z)/(-dy - dz)
                     p0C.y = -p0C.z;
 
-                    let topT = (p0C.y + p0C.z)/(-dy - dz);
-                    p0C.x = p0C.x + (topT*dx);
+                    let topT = (p0C.y + p0C.z) / (-dy - dz);
+                    p0C.x = p0C.x + (topT * dx);
 
-                }else if (side == 4){
+                } else if (side == 4) {
                     // FAR case
                     // know the y and the x, find the z
                     // x = p0C.x + T * dx
@@ -311,10 +309,10 @@ class Renderer {
                     // farT = (-p0C.z - 1)/(dz)
                     p0C.z = -1;
 
-                    let farT = (-p0C.z - 1)/(dz);
-                    p0C.z = p0C.z + (farT*dz);
+                    let farT = (-p0C.z - 1) / (dz);
+                    p0C.z = p0C.z + (farT * dz);
 
-                }else if (side == 5){
+                } else if (side == 5) {
                     // NEAR case
                     // know the y and the x, find the z
                     // x = p0C.x + T * dx
@@ -324,21 +322,21 @@ class Renderer {
                     // nearT = (p0C.z - z_min)/(-dz)
                     p0C.z = z_min;
 
-                    let nearT = (p0C.z - z_min)/(-dz);
-                    p0C.z = p0C.z + (nearT*dz);
-                
+                    let nearT = (p0C.z - z_min) / (-dz);
+                    p0C.z = p0C.z + (nearT * dz);
+
                 }
                 out0 = out0.replace("1", "0");
             }
 
-            while(out1.toString(redix).indexOf('1') != -1){
+            while (out1.toString(redix).indexOf('1') != -1) {
                 let newOutcode = out1.toString(redix);
                 // pick a side, the first occurrence of 1, and clip the line against that, then continue
                 let side = newOutcode.indexOf('1');
                 let dx = p1C.x - p1C.x;
                 let dy = p1C.y - p1C.y;
                 let dz = p1C.z - p1C.z;
-                if(side == 0){
+                if (side == 0) {
                     // LEFT case
                     // know the x and the z, find the y
                     // x = p1C.x + T * dx
@@ -350,10 +348,10 @@ class Renderer {
                     // TODO: question about bounding planes. It is perspective, am I doing the order correctly?
                     p1C.x = p1C.z;
 
-                    let leftT = (-p1C.x + p1C.z)/(dx - dz);
-                    p1C.y = p1C.y + (leftT*dy);
+                    let leftT = (-p1C.x + p1C.z) / (dx - dz);
+                    p1C.y = p1C.y + (leftT * dy);
 
-                }else if (side == 1){
+                } else if (side == 1) {
                     // RIGHT case
                     // know the x and the z, find the y
                     // x = p1C.x + T * dx
@@ -363,10 +361,10 @@ class Renderer {
                     // rightT = (p1C.x + p1C.z)/(-dx - dz)
                     p1C.x = -p1C.z;
 
-                    let rightT = (p1C.x + p1C.z)/(-dx - dz);
-                    p1C.y = p1C.y + (leftT*dy);
+                    let rightT = (p1C.x + p1C.z) / (-dx - dz);
+                    p1C.y = p1C.y + (leftT * dy);
 
-                }else if (side == 2){
+                } else if (side == 2) {
                     // BOTTOM case
                     // know the y and the z, find the x
                     // x = p1C.x + T * dx
@@ -376,11 +374,11 @@ class Renderer {
                     // bottomT = (-p1C.y + p1C.z)/(dy - dz)
                     p1C.y = p1C.z;
 
-                    let bottomT = (-p1C.y + p1C.z)/(dy - dz);
-                    p1C.x = p1C.x + (bottomT*dx);
+                    let bottomT = (-p1C.y + p1C.z) / (dy - dz);
+                    p1C.x = p1C.x + (bottomT * dx);
 
 
-                }else if (side == 3){
+                } else if (side == 3) {
                     // TOP case
                     // know the y and the z, find the x
                     // x = p1C.x + T * dx
@@ -390,10 +388,10 @@ class Renderer {
                     // topT = (p1C.y + p1C.z)/(-dy - dz)
                     p1C.y = -p1C.z;
 
-                    let topT = (p1C.y + p1C.z)/(-dy - dz);
-                    p1C.x = p1C.x + (topT*dx);
+                    let topT = (p1C.y + p1C.z) / (-dy - dz);
+                    p1C.x = p1C.x + (topT * dx);
 
-                }else if (side == 4){
+                } else if (side == 4) {
                     // FAR case
                     // know the y and the x, find the z
                     // x = p1C.x + T * dx
@@ -403,10 +401,10 @@ class Renderer {
                     // farT = (-p1C.z - 1)/(dz)
                     p1C.z = -1;
 
-                    let farT = (-p1C.z - 1)/(dz);
-                    p1C.z = p1C.z + (farT*dz);
+                    let farT = (-p1C.z - 1) / (dz);
+                    p1C.z = p1C.z + (farT * dz);
 
-                }else if (side == 5){
+                } else if (side == 5) {
                     // NEAR case
                     // know the y and the x, find the z
                     // x = p1C.x + T * dx
@@ -416,9 +414,9 @@ class Renderer {
                     // nearT = (p1C.z - z_min)/(-dz)
                     p1C.z = z_min;
 
-                    let nearT = (p1C.z - z_min)/(-dz);
-                    p1C.z = p1C.z + (nearT*dz);
-                
+                    let nearT = (p1C.z - z_min) / (-dz);
+                    p1C.z = p1C.z + (nearT * dz);
+
                 }
                 out1 = out1.replace("1", "0");
             }
@@ -485,9 +483,9 @@ class Renderer {
                 model.edges = JSON.parse(JSON.stringify(scene.models[i].edges));
                 for (let j = 0; j < scene.models[i].vertices.length; j++) {
                     model.vertices.push(Vector4(scene.models[i].vertices[j][0],
-                                                scene.models[i].vertices[j][1],
-                                                scene.models[i].vertices[j][2],
-                                                1));
+                        scene.models[i].vertices[j][1],
+                        scene.models[i].vertices[j][2],
+                        1));
                     if (scene.models[i].hasOwnProperty('animation')) {
                         model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
                     }
@@ -495,9 +493,9 @@ class Renderer {
             }
             else {
                 model.center = Vector4(scene.models[i].center[0],
-                                       scene.models[i].center[1],
-                                       scene.models[i].center[2],
-                                       1);
+                    scene.models[i].center[1],
+                    scene.models[i].center[2],
+                    1);
                 for (let key in scene.models[i]) {
                     if (scene.models[i].hasOwnProperty(key) && key !== 'type' && key != 'center') {
                         model[key] = JSON.parse(JSON.stringify(scene.models[i][key]));
@@ -511,7 +509,7 @@ class Renderer {
 
         return processed;
     }
-    
+
     // x0:           float (x coordinate of p0)
     // y0:           float (y coordinate of p0)
     // x1:           float (x coordinate of p1)
