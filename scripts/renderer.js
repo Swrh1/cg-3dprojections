@@ -77,6 +77,9 @@ class Renderer {
             newpoints[i] = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height), newpoints[i]]);
         }
 
+        let view = mat4x4Viewport(this.canvas.width,this.canvas.height);
+
+
         console.log('draw()');
         console.log("Whole thing", this.scene.models);
 
@@ -86,8 +89,8 @@ class Renderer {
         //z_min = -near/far
         let zmin1 = -(clipOrigin[4]) / clipOrigin[5];
 
-        let toDraw = [];
-        let toClip = [];
+        // let toDraw = [];
+        // let toClip = [];
 
         // Instructions: 
         // For each model
@@ -99,81 +102,121 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
 
-        // For each model
-        this.scene.models.forEach(function (theModel) {
-            console.log("Model ", theModel);
 
-            //   * For each vertex
-            theModel.vertices.forEach(function (theVertex) {
-                console.log("Vertex: ", theVertex);
-                //     * transform endpoints to canonical view volume
-                // idk what that means
-            });
+        for(let i=0; i <this.scene.models[0].edges.length; i++){
+            for(let k =0; k<this.scene.models[0].edges[i].length-i; k++){
+                // animation stuff
 
-            //   * For each line segment in each edge
-            theModel.edges.forEach(function (theEdge) {
-                console.log("Edge: ", theEdge);
-
-                //     * clip in 3D
-                // Attempting to get the lines to be able to clip them
-                for (let i = 0; i < theEdge.length; i++) {
-                    if (i != theEdge.length - 1) {
-
-                        let pt0Init = Vector4(theModel.vertices[theEdge[i]].data[0],
-                            theModel.vertices[theEdge[i]].data[1],
-                            theModel.vertices[theEdge[i]].data[2]);
-                        let pt1Init = Vector4(theModel.vertices[theEdge[i + 1]].data[0],
-                            theModel.vertices[theEdge[i + 1]].data[1],
-                            theModel.vertices[theEdge[i + 1]].data[2]);
-                        // creates a line with the format expected by clipLinePerspective()
-                        let newLine = {
-                            pt0: pt0Init,
-                            pt1: pt1Init
-                        };
-
-                        toClip.push([newLine]);
-                        console.log("newLine: ", newLine)
-
-                        console.log("ToClip: ", toClip[0][0])
+                
+                let vert1Index = this.scene.models[0].edges[i][k];
+                let vert1W = Matrix.multiply([Nper, this.scene.models[0].vertices[vert1Index]]);
+                console.log("vert1W, ", vert1W);
 
 
+                let vert2Index = this.scene.models[0].edges[i][(k+1)];
+                let vert2W = Matrix.multiply([Nper, this.scene.models[0].vertices[vert2Index]]);
+
+                // clipping here
+                let line = {pt0: vert1W, pt1:vert2W};
+                console.log("LINE: ", line);
+                let zMin = zmin1;
+                let returned = this.clipLinePerspective(line, zMin);
+
+                if(returned != null){
+                    let Mper = mat4x4MPer();
+                    
+                    vert1W = returned.pt0;
+                    vert2W = returned.pt1;
+
+                    vert1W = Matrix.multiply([view, Mper, vert1W]);
+
+                    console.log("vert1 ", vert1W);
+
+                    let vert1 = new Vector3((vert1W.x / vert1W.w), (vert1W.y/ vert1W.w));
 
 
-                        // toDraw.push([theModel.vertices[i].data[0],theModel.vertices[i].data[1], theModel.vertices[i+1].data[0], theModel.vertices[i+1].data[1]])
-                    }
+                    vert2W = Matrix.multiply([view, mat4x4MPer(), vert2W]);
+                    let vert2 = new Vector3((vert2W.x / vert2W.w), (vert2W.y/ vert2W.w));
+
+                    this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
                 }
 
-            });
-            //     * project to 2D - not done yet
-            //     * translate/scale to viewport (i.e. window) - not done yet
-            //     * draw line - not done yet
-        });
 
-        /* Testing to try and get the lines to clip */
-        console.log("BEFORE ", toClip[0][0]);
-
-        for (let i = 0; i < toClip.length; i++) {
-            toClip[i] = this.clipLinePerspective(toClip[i][0], zmin1);
+            }
         }
-        console.log("AFTER  ", toClip);
 
-        for (let i = 0; i < toDraw.length; i++) {
-            this.drawLine(toDraw[i][0], toDraw[i][1], toDraw[i][2], toDraw[i][3])
-        }
+        // For each model
+        // this.scene.models.forEach(function (theModel) {
+        //     console.log("Model ", theModel);
+
+        //     //   * For each vertex
+        //     theModel.vertices.forEach(function (theVertex) {
+        //         console.log("Vertex: ", theVertex);
+        //         //     * transform endpoints to canonical view volume
+        //         // idk what that means
+        //     });
+
+        //     //   * For each line segment in each edge
+        //     theModel.edges.forEach(function (theEdge) {
+        //         console.log("Edge: ", theEdge);
+
+        //         //     * clip in 3D
+        //         // Attempting to get the lines to be able to clip them
+        //         for (let i = 0; i < theEdge.length; i++) {
+        //             if (i != theEdge.length - 1) {
+
+        //                 let pt0Init = Vector4(theModel.vertices[theEdge[i]].data[0],
+        //                     theModel.vertices[theEdge[i]].data[1],
+        //                     theModel.vertices[theEdge[i]].data[2]);
+        //                 let pt1Init = Vector4(theModel.vertices[theEdge[i + 1]].data[0],
+        //                     theModel.vertices[theEdge[i + 1]].data[1],
+        //                     theModel.vertices[theEdge[i + 1]].data[2]);
+        //                 // creates a line with the format expected by clipLinePerspective()
+        //                 let newLine = {
+        //                     pt0: pt0Init,
+        //                     pt1: pt1Init
+        //                 };
+
+        //                 toClip.push([newLine]);
+        //                 console.log("newLine: ", newLine)
+
+        //                 console.log("ToClip: ", toClip[0][0])
+
+        //                 // toDraw.push([theModel.vertices[i].data[0],theModel.vertices[i].data[1], theModel.vertices[i+1].data[0], theModel.vertices[i+1].data[1]])
+        //             }
+        //         }
+
+        //     });
+        //     //     * project to 2D - not done yet
+        //     //     * translate/scale to viewport (i.e. window) - not done yet
+        //     //     * draw line - not done yet
+        // });
+
+        // /* Testing to try and get the lines to clip */
+        // console.log("BEFORE ", toClip[0][0]);
+
+        // for (let i = 0; i < toClip.length; i++) {
+        //     toClip[i] = this.clipLinePerspective(toClip[i][0], zmin1);
+        // }
+        // console.log("AFTER  ", toClip[0]);
+
+        // for (let i = 0; i < toDraw.length; i++) {
+        //     this.drawLine(toDraw[i][0], toDraw[i][1], toDraw[i][2], toDraw[i][3])
+        // }
 
         // TODO: implement drawing here!
         // For each model
         //   * For each vertex
         //     * transform endpoints to canonical view volume
         //   * For each line segment in each edge
-        //     * clip in 3D
-        //     * project to 2D
-        //     * translate/scale to viewport (i.e. window)
+        //     * clip in 3D 
+        //     * project to 2D DONE
+        //     * translate/scale to viewport (i.e. window) DONE
         //     * draw line
         //this.drawLine(0, 0, 100, 100);
-        newpoints.forEach(element => {
-            this.drawLine(element.x, element.y, element.x + 1, element.y + 1);
-        });
+        // newpoints.forEach(element => {
+        //     this.drawLine(element.x, element.y, element.x + 1, element.y + 1);
+        // });
     }
 
     // Get outcode for a vertex
@@ -213,7 +256,6 @@ class Renderer {
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
         // TODO: implement clipping here!
-
 
         if ((out0 | out1) == 0) {
             // trivial accept, bitwise or the outcodes, if 0, then accept.
