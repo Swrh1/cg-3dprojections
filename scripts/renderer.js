@@ -21,21 +21,22 @@ class Renderer {
         this.model = 1; // <--- change this to change the model
         this.rotate = new Matrix(4,4);
         this.rotfactor = 0.001;
+        this.center = this.get_center();
     }
 
     //
     updateTransforms(time, delta_time) {
         let to = new Matrix(4,4);
         let tb = new Matrix(4,4);
-        mat4x4Translate(to, -10, -10, 15);
-        mat4x4Translate(tb, 10, 10, -15);
+        mat4x4Translate(to, -this.center[0], -this.center[1], -this.center[2]);
+        mat4x4Translate(tb, this.center[0], this.center[1], this.center[2]);
         let x = new Matrix(4,4);
         let y = new Matrix(4,4);
         let z = new Matrix(4,4);
         mat4x4RotateX(x, this.rotfactor*time);
         mat4x4RotateY(y, this.rotfactor*time);
         mat4x4RotateZ(z, this.rotfactor*time);
-        this.rotate = Matrix.multiply([tb,z,to]);
+        this.rotate = Matrix.multiply([tb,x,y,z,to]);
     }
 
     // Left arrow key: rotate SRP around the v-axis with the PRP as the origin NEGATIVE
@@ -104,6 +105,50 @@ class Renderer {
         this.scene.view.srp.y = this.scene.view.srp.y + 1;
 
         this.draw();
+    }
+
+    get_center()
+    {
+        let max_x = this.scene.models[0].vertices[0].x;
+        let max_y = this.scene.models[0].vertices[0].y;
+        let max_z = this.scene.models[0].vertices[0].z;
+        let min_x = this.scene.models[0].vertices[0].x;
+        let min_y = this.scene.models[0].vertices[0].y;
+        let min_z = this.scene.models[0].vertices[0].z;
+        for(let i=0;i<this.scene.models[0].vertices.length;i++)
+        {
+            //console.log(this.scene.models[0].vertices[i].x);
+            if(this.scene.models[0].vertices[i].x > max_x)
+            {
+                max_x = this.scene.models[0].vertices[i].x;
+            }
+
+            if(this.scene.models[0].vertices[i].y > max_y)
+            {
+                max_y = this.scene.models[0].vertices[i].y;
+            }
+
+            if(this.scene.models[0].vertices[i].z > max_z)
+            {
+                max_z = this.scene.models[0].vertices[i].z;
+            }
+
+            if(this.scene.models[0].vertices[i].x < min_x)
+            {
+                min_x = this.scene.models[0].vertices[i].x;
+            }
+
+            if(this.scene.models[0].vertices[i].y < min_y)
+            {
+                min_y = this.scene.models[0].vertices[i].y;
+            }
+
+            if(this.scene.models[0].vertices[i].z < min_z)
+            {
+                min_z = this.scene.models[0].vertices[i].z;
+            }
+        }
+        return [(max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2];
     }
 
     //
