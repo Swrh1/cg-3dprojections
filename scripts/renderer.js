@@ -22,13 +22,13 @@ class Renderer {
         this.rotate = new Matrix(4,4);
         this.rotfactor = 0.001;
 
-        switch(this.model)
+        switch(this.scene.models[this.model].type)
         {
-            case 0:
+            case 'generic':
                 this.vertices = this.scene.models[0].vertices;
                 this.edges = this.scene.models[0].edges;
                 break;
-            case 1:
+            case 'cube':
                 let cx = this.scene.models[1].center.x;
                 let cy = this.scene.models[1].center.y;
                 let cz = this.scene.models[1].center.z;
@@ -45,13 +45,13 @@ class Renderer {
                               [2,6],
                               [3,7]];
                 break;
-            case 2:
+            case 'cone':
                 //TODO: Cone
                 break;
-            case 3:
+            case 'cylinder':
                 //TODO: Cylinder
                 break;
-            case 4:
+            case 'sphere':
                 //TODO: Sphere
                 break;
             }
