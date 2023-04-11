@@ -58,6 +58,10 @@ class Renderer {
             this.center = this.get_center();
     }
 
+    //////////////////
+    //TODO: Make a function that makes a circle in the verticie and edge tables
+    /////////////////
+
     //
     updateTransforms(time, delta_time) {
         let to = new Matrix(4,4);
