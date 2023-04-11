@@ -21,15 +21,15 @@ class Renderer {
         this.model = 0;
         this.rotate = new Matrix(4,4);
         this.rotfactor = 0.001;
+        this.center = this.get_center();
     }
 
     //
     updateTransforms(time, delta_time) {
-        let center = this.get_center();
         let to = new Matrix(4,4);
         let tb = new Matrix(4,4);
-        mat4x4Translate(to, -center[0], -center[1], -center[2]);
-        mat4x4Translate(tb, center[0], center[1], center[2]);
+        mat4x4Translate(to, -this.center[0], -this.center[1], -this.center[2]);
+        mat4x4Translate(tb, this.center[0], this.center[1], this.center[2]);
         let x = new Matrix(4,4);
         let y = new Matrix(4,4);
         let z = new Matrix(4,4);
