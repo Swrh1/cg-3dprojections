@@ -77,7 +77,7 @@ class Renderer {
             newpoints[i] = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height), newpoints[i]]);
         }
 
-        let view = mat4x4Viewport(this.canvas.width,this.canvas.height);
+        let view = mat4x4Viewport(this.canvas.width, this.canvas.height);
 
 
         console.log('draw()');
@@ -103,8 +103,8 @@ class Renderer {
         //     * draw line
 
 
-        for(let i=0; i <this.scene.models[0].edges.length; i++){
-            for(let k =0; k<this.scene.models[0].edges[i].length-i; k++){
+        for(let i=0; i<this.scene.models[0].edges.length; i++){
+            for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
                 // animation stuff
 
                 
@@ -135,7 +135,7 @@ class Renderer {
                     let vert1 = new Vector3((vert1W.x / vert1W.w), (vert1W.y/ vert1W.w));
 
 
-                    vert2W = Matrix.multiply([view, mat4x4MPer(), vert2W]);
+                    vert2W = Matrix.multiply([view, Mper, vert2W]);
                     let vert2 = new Vector3((vert2W.x / vert2W.w), (vert2W.y/ vert2W.w));
 
                     this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
