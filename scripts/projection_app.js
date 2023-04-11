@@ -91,28 +91,28 @@ function init() {
                 height: 30,
                 depth: 30
             },
-            /*
             {
                 type: 'cone',
-                center: [], // 3 component [x, y, z]
-                radius: 0,
-                height: 0,
-                sides: 0
+                center: [20.0,0.0,-60.0], // 3 component [x, y, z]
+                radius: 10,
+                height: 30,
+                sides: 10
             },
             {
                 type: 'cylinder',
-                center: [], // 3 component [x, y, z]
-                radius: 0,
-                height: 0,
-                sides: 0
+                center: [20.0,0.0,-60.0], // 3 component [x, y, z]
+                radius: 10,
+                height: 30,
+                sides: 10
 
             },
+            /*
             {
                 type: 'sphere',
-                center: [], // 3 component [x, y, z]
-                radius: 0,
-                slices: [], // (think number of longitude lines on a globe)
-                stacks: []  // (think number of latitude lines on a globe)
+                center: [20.0,0.0,-60.0], // 3 component [x, y, z]
+                radius: 10,
+                slices: [10], // (think number of longitude lines on a globe)
+                stacks: [10]  // (think number of latitude lines on a globe)
 
             },
             */

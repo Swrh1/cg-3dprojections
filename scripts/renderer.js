@@ -45,14 +45,18 @@ class Renderer {
 
     // Left arrow key: rotate SRP around the v-axis with the PRP as the origin NEGATIVE
     rotateLeft() {
-
+        let u_axis = this.scene.view.vup.cross(this.scene.view.srp);
+        u_axis.normalize();
+        this.scene.view.vup = this.scene.view.vup.subtract(u_axis);
     }
 
     // Right arrow key: rotate SRP around the v-axis with the PRP as the origin POSITIVE
     rotateRight() {
         // probably need to translate the SRP to the PRP, increase it by one or so,
         // then translate it back to the original spot.
-
+        let u_axis = this.scene.view.vup.cross(this.scene.view.srp);
+        u_axis.normalize();
+        this.scene.view.vup = this.scene.view.vup.add(u_axis);
     }
 
     // A key: translate the PRP and SRP along the u-axis
@@ -62,7 +66,7 @@ class Renderer {
         // // console.log("PRP: ", this.scene.view.prp.x, this.scene.view.srp.y, this.scene.view.srp.z);
         // // console.log("SRP: ", this.scene.view.srp.x, this.scene.view.srp.y, this.scene.view.srp.z);
         // // need to calculate the vrc, but only n and u for now
-        let VRC = this.calculateVRC(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup);
+        //let VRC = this.calculateVRC(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup);
         // // console.log(VRC);
         // // console.log(VRC.u);
         // // console.log(VRC.u.data);
@@ -121,7 +125,6 @@ class Renderer {
         let min_z = this.vertices[0].z;
         for(let i=0;i<this.vertices.length;i++)
         {
-            //console.log(this.scene.models[0].vertices[i].x);
             if(this.vertices[i].x > max_x)
             {
                 max_x = this.vertices[i].x;
@@ -153,6 +156,30 @@ class Renderer {
             }
         }
         return [(max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2];
+    }
+
+    add_circle(center, radius, sides)
+    {
+        let points = [];
+        let steps = sides;
+        let x,y;
+        for (let i = 0; i < steps; i++) {
+            x = Math.round(center.x + radius * Math.cos(2 * Math.PI * i / steps));
+            y = Math.round(center.y + radius * Math.sin(2 * Math.PI * i / steps));
+            points.push(Vector4(x,y,center.z,1));
+        }
+        let start = this.vertices.length;
+        //Add new points to vertices
+        points.forEach(element => {
+            this.vertices.push(element);
+        });
+        let new_edges = [];
+        for(let i=0;i<points.length;i++)
+        {
+            new_edges[i] = start+i;
+        }
+        new_edges.push(start);
+        this.edges.push(new_edges);
     }
 
     //
@@ -194,9 +221,10 @@ class Renderer {
         this.scene.models.forEach(element => {
             //this.center.push(get_center());
         });
-
         for(let elem=0;elem<this.scene.models.length;elem++) {
             let element = this.scene.models[elem];
+            let steps;
+            let x,y,et;
             switch(element.type)
             {
                 case 'generic':
@@ -219,6 +247,78 @@ class Renderer {
                               [1,5],
                               [2,6],
                               [3,7]];
+                    break;
+                case 'cone':
+                    this.vertices = [];
+                    this.edges = [];
+                    steps = element.sides;
+
+                    for(let i = 0;i<steps;i++)
+                    {
+                        x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
+                        y = Math.round(element.center.y + element.radius * Math.sin(2 * Math.PI * i / steps));
+                        this.vertices.push(Vector4(x,y,element.center.z-(element.height/2),1));
+                    }
+                    //Connect all the edges of the circle
+                    et = [];
+                    for(let j=0;j<this.vertices.length;j++)
+                    {
+                        et.push(j);
+                    }
+                    //Complete circle
+                    et.push(0);
+                    this.edges.push(et);
+
+                    this.vertices.push(Vector4(element.center.x,element.center.y,element.center.z+(element.height/2),1));
+
+                    let numVerts = this.vertices.length;
+                    et = [];
+                    for(let k=0;k<numVerts-1;k++)
+                    {
+                        this.edges.push([k, numVerts-1]);
+                    }
+                    break;
+                case 'cylinder':
+                    this.vertices = [];
+                    this.edges = [];
+                    steps = element.sides;
+                    for(let i = 0;i<steps;i++)
+                    {
+                        x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
+                        y = Math.round(element.center.y + element.radius * Math.sin(2 * Math.PI * i / steps));
+                        this.vertices.push(Vector4(x,y,element.center.z-(element.height/2),1));
+                    }
+                    //Connect all the edges of the circle
+                    et = [];
+                    for(let j=0;j<this.vertices.length;j++)
+                    {
+                        et.push(j);
+                    }
+                    //Complete circle
+                    et.push(0);
+                    this.edges.push(et);
+                    
+                    for(let i = 0;i<steps;i++)
+                    {
+                        x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
+                        y = Math.round(element.center.y + element.radius * Math.sin(2 * Math.PI * i / steps));
+                        this.vertices.push(Vector4(x,y,element.center.z+(element.height/2),1));
+                    }
+                    //Connect all the edges of the circle
+                    et = [];
+                    for(let j=steps;j<this.vertices.length;j++)
+                    {
+                        et.push(j);
+                    }
+                    //Complete circle
+                    et.push(steps);
+                    this.edges.push(et);
+
+                    for(let k=0;k<steps;k++)
+                    {
+                        this.edges.push([k, k+steps]);
+                    }
+
                     break;
             }
             this.center = this.get_center();
@@ -548,7 +648,6 @@ class Renderer {
     //
     updateScene(scene) {
         this.scene = this.processScene(scene);
-        console.log(this.scene);
         if (!this.enable_animation) {
             this.draw();
         }
