@@ -15,16 +15,28 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
         this.model = 0;
         this.newpoints;
+        this.rotate = new Matrix(4,4);
+        this.rotfactor = 0.001;
     }
 
     //
     updateTransforms(time, delta_time) {
-        
+        let to = new Matrix(4,4);
+        let tb = new Matrix(4,4);
+        mat4x4Translate(to, -15, -15, 15);
+        mat4x4Translate(tb, 15, 15, -15);
+        let x = new Matrix(4,4);
+        let y = new Matrix(4,4);
+        let z = new Matrix(4,4);
+        mat4x4RotateX(x, this.rotfactor*time);
+        mat4x4RotateY(y, this.rotfactor*time);
+        mat4x4RotateZ(z, this.rotfactor*time);
+        this.rotate = Matrix.multiply([tb,x,y,z,to]);
     }
 
     //
@@ -73,18 +85,18 @@ class Renderer {
             newpoints.push(vertex);
         });
         for (let i = 0; i < newpoints.length; i++) {
-            console.log(newpoints[i]);
+            //console.log(newpoints[i]);
             newpoints[i] = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height), newpoints[i]]);
         }
 
         let view = mat4x4Viewport(this.canvas.width, this.canvas.height);
 
 
-        console.log('draw()');
-        console.log("Whole thing", this.scene.models);
+        //console.log('draw()');
+        //console.log("Whole thing", this.scene.models);
 
         let clipOrigin = this.scene.view.clip;
-        console.log("Clip borders: ", clipOrigin);
+        //console.log("Clip borders: ", clipOrigin);
 
         //z_min = -near/far
         let zmin1 = -(clipOrigin[4]) / clipOrigin[5];
@@ -102,23 +114,21 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
 
-
         for(let i=0; i<this.scene.models[0].edges.length; i++){
             for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
                 // animation stuff
-
+                //take each point of the edge and rotate it
                 
                 let vert1Index = this.scene.models[0].edges[i][k];
-                let vert1W = Matrix.multiply([Nper, this.scene.models[0].vertices[vert1Index]]);
-                console.log("vert1W, ", vert1W);
+                let vert1W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[vert1Index]]);
 
 
                 let vert2Index = this.scene.models[0].edges[i][(k+1)];
-                let vert2W = Matrix.multiply([Nper, this.scene.models[0].vertices[vert2Index]]);
+                let vert2W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[vert2Index]]);
 
                 // clipping here
                 let line = {pt0: vert1W, pt1:vert2W};
-                console.log("LINE: ", line);
+                //console.log("LINE: ", line);
                 let zMin = zmin1;
                 let returned = this.clipLinePerspective(line, zMin);
 
@@ -130,12 +140,12 @@ class Renderer {
 
                     vert1W = Matrix.multiply([view, Mper, vert1W]);
 
-                    console.log("vert1 ", vert1W);
+                    //console.log("vert1 ", vert1W);
 
                     let vert1 = new Vector3((vert1W.x / vert1W.w), (vert1W.y/ vert1W.w));
 
-
                     vert2W = Matrix.multiply([view, Mper, vert2W]);
+
                     let vert2 = new Vector3((vert2W.x / vert2W.w), (vert2W.y/ vert2W.w));
 
                     this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
@@ -279,8 +289,8 @@ class Renderer {
             let p0C = p0;
             let p1C = p1;
             // convert out0 to a string binary, then loop until there isn't a 1 in the outcode
-            while (out0.toString(redix).indexOf('1') != -1) {
-                let newOutcode = out0.toString(redix);
+            while (out0.toString().indexOf('1') != -1) {
+                let newOutcode = out0.toString();
                 // pick a side, the first occurance of 1, and clip the line against that, then continue
                 let side = newOutcode.indexOf('1');
                 let dx = p1C.x - p0C.x;
@@ -312,7 +322,7 @@ class Renderer {
                     p0C.x = -p0C.z;
 
                     let rightT = (p0C.x + p0C.z) / (-dx - dz);
-                    p0C.y = p0C.y + (leftT * dy);
+                    p0C.y = p0C.y + (rightT * dy);
 
                 } else if (side == 2) {
                     // BOTTOM case
@@ -368,11 +378,11 @@ class Renderer {
                     p0C.z = p0C.z + (nearT * dz);
 
                 }
-                out0 = out0.replace("1", "0");
+                out0 = out0.toString().replace("1", "0");
             }
 
-            while (out1.toString(redix).indexOf('1') != -1) {
-                let newOutcode = out1.toString(redix);
+            while (out1.toString().indexOf('1') != -1) {
+                let newOutcode = out1.toString();
                 // pick a side, the first occurrence of 1, and clip the line against that, then continue
                 let side = newOutcode.indexOf('1');
                 let dx = p1C.x - p1C.x;
@@ -404,7 +414,7 @@ class Renderer {
                     p1C.x = -p1C.z;
 
                     let rightT = (p1C.x + p1C.z) / (-dx - dz);
-                    p1C.y = p1C.y + (leftT * dy);
+                    p1C.y = p1C.y + (rightT * dy);
 
                 } else if (side == 2) {
                     // BOTTOM case
@@ -460,11 +470,11 @@ class Renderer {
                     p1C.z = p1C.z + (nearT * dz);
 
                 }
-                out1 = out1.replace("1", "0");
+                out1 = out1.toString().replace("1", "0");
             }
             // All outcodes have been correctly handled.
-            line.p0 = p0c;
-            line.p1 = p1c;
+            line.p0 = p0C;
+            line.p1 = p1C;
             result = line;
         }
         return result;
