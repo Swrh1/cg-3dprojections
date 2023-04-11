@@ -83,7 +83,37 @@ function init() {
                     [3, 8],
                     [4, 9]
                 ]
-            }
+            },
+            {
+                type: 'cube',
+                center:[20.0, 0.0, -60.0], //3 component [x, y, z]
+                width: 30,
+                height: 30,
+                depth: 30
+            },
+            {
+                type: 'cone',
+                center: [], // 3 component [x, y, z]
+                radius: 0,
+                height: 0,
+                sides: 0
+            },
+            {
+                type: 'cylinder',
+                center: [], // 3 component [x, y, z]
+                radius: 0,
+                height: 0,
+                sides: 0
+
+            },
+            {
+                type: 'sphere',
+                center: [], // 3 component [x, y, z]
+                radius: 0,
+                slices: [], // (think number of longitude lines on a globe)
+                stacks: []  // (think number of latitude lines on a globe)
+
+            },
         ]
     };
 

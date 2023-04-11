@@ -15,10 +15,10 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
-        this.model = 0;
+        this.model = 1; // <--- change this to change the model
         this.rotate = new Matrix(4,4);
         this.rotfactor = 0.001;
     }
@@ -38,34 +38,72 @@ class Renderer {
         this.rotate = Matrix.multiply([tb,z,to]);
     }
 
-    //
+    // Left arrow key: rotate SRP around the v-axis with the PRP as the origin NEGATIVE
     rotateLeft() {
 
     }
 
-    //
+    // Right arrow key: rotate SRP around the v-axis with the PRP as the origin POSITIVE
     rotateRight() {
+        // probably need to translate the SRP to the PRP, increase it by one or so,
+        // then translate it back to the original spot.
 
     }
 
-    //
+    // A key: translate the PRP and SRP along the u-axis
     moveLeft() {
+        
+        // // this.scene.view.prp.x or this.scene.view.prp.y etc
+        // // console.log("PRP: ", this.scene.view.prp.x, this.scene.view.srp.y, this.scene.view.srp.z);
+        // // console.log("SRP: ", this.scene.view.srp.x, this.scene.view.srp.y, this.scene.view.srp.z);
+        // // need to calculate the vrc, but only n and u for now
+        // let VRC = this.calculateVRC(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup);
+        // // console.log(VRC);
+        // // console.log(VRC.u);
+        // // console.log(VRC.u.data);
+        // // console.log(VRC.u.data[0]);
+        // // console.log(VRC.u.data[0][0]);
+        // // console.log(VRC.u.data[1][0]);
+        // // console.log(VRC.u.data[2][0]);
 
+        // let test = mat4x4MPer();
+        // mat4x4Translate(test, VRC.u.data[0][0], VRC.u.data[1][0], VRC.u.data[2][0]);
+
+        // let T = mat4x4MPer();
+        // mat4x4Translate(T, (-1*this.scene.view.prp.x), (-1*this.scene.view.prp.y), (-1*this.scene.view.prp.z));
+        // // console.log(T);
+
+        // // console.log("PRP before: ", this.scene.view.prp.x, this.scene.view.srp.y, this.scene.view.srp.z);
+        // // console.log("SRP before: ", this.scene.view.srp.x, this.scene.view.srp.y, this.scene.view.srp.z);
+
+        this.scene.view.prp.x = this.scene.view.prp.x - 1;
+        this.scene.view.srp.x = this.scene.view.srp.x - 1;
+
+        this.draw();
     }
 
-    //
+    // D key: translate the PRP and SRP along the u-axis
     moveRight() {
+        this.scene.view.prp.x = this.scene.view.prp.x + 1;
+        this.scene.view.srp.x = this.scene.view.srp.x + 1;
 
+        this.draw();
     }
 
-    //
+    // S key: translate the PRP and SRP along the n-axis
     moveBackward() {
+        this.scene.view.prp.y = this.scene.view.prp.y - 1;
+        this.scene.view.srp.y = this.scene.view.srp.y -1;
 
+        this.draw();
     }
 
-    //
+    // W key: translate the PRP and SRP along the n-axis
     moveForward() {
+        this.scene.view.prp.y = this.scene.view.prp.y + 1;
+        this.scene.view.srp.y = this.scene.view.srp.y + 1;
 
+        this.draw();
     }
 
     //
@@ -77,11 +115,11 @@ class Renderer {
         let MNper = Matrix.multiply([mat4x4MPer(), Nper]);
         let newpoints = [];
 
-        this.scene.models[this.model].vertices.forEach(function (vertex) {
-            vertex = Matrix.multiply([MNper, vertex]);
-            vertex.scale((1/vertex.w));
-            newpoints.push(vertex);
-        });
+        // this.scene.models[this.model].vertices.forEach(function (vertex) {
+        //     vertex = Matrix.multiply([MNper, vertex]);
+        //     vertex.scale((1/vertex.w));
+        //     newpoints.push(vertex);
+        // });
         for (let i = 0; i < newpoints.length; i++) {
             newpoints[i] = Matrix.multiply([mat4x4Viewport(this.canvas.width,this.canvas.height), newpoints[i]]);
         }
@@ -103,33 +141,238 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
 
-        for(let i=0; i<this.scene.models[0].edges.length; i++){
-            for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
-                //take each point of the edge and rotate it
-                
-                let v1 = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[this.scene.models[0].edges[i][k]]]);
-
-                let v2 = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[this.scene.models[0].edges[i][(k+1)]]]);
-                // clipping here
-                let line = {pt0: v1, pt1:v2};
-                let zMin = zmin1;
-                let clipped = this.clipLinePerspective(line, zMin);
-
-                if(clipped != null){
-                    let Mper = mat4x4MPer();
+        if(this.model == 0){
+            for(let i=0; i<this.scene.models[0].edges.length; i++){
+                for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
+                    //take each point of the edge and rotate it
                     
-                    v1 = clipped.pt0;
-                    v2 = clipped.pt1;
+                    let v1 = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[this.scene.models[0].edges[i][k]]]);
 
-                    v1 = Matrix.multiply([viewport, Mper, v1]);
+                    let v2 = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[this.scene.models[0].edges[i][(k+1)]]]);
+                    // clipping here
+                    let line = {pt0: v1, pt1:v2};
+                    let zMin = zmin1;
+                    let clipped = this.clipLinePerspective(line, zMin);
 
-                    let vert1 = new Vector3((v1.x / v1.w), (v1.y/ v1.w));
+                    if(clipped != null){
+                        let Mper = mat4x4MPer();
+                        
+                        v1 = clipped.pt0;
+                        v2 = clipped.pt1;
 
-                    v2 = Matrix.multiply([viewport, Mper, v2]);
+                        v1 = Matrix.multiply([viewport, Mper, v1]);
 
-                    let vert2 = new Vector3((v2.x / v2.w), (v2.y/ v2.w));
+                        let vert1 = new Vector3((v1.x / v1.w), (v1.y/ v1.w));
 
-                    this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
+                        v2 = Matrix.multiply([viewport, Mper, v2]);
+
+                        let vert2 = new Vector3((v2.x / v2.w), (v2.y/ v2.w));
+
+                        this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
+                    }
+                }
+            }
+        }
+        // goes through the stuff for cube
+        else if(this.model == 1){
+
+            // we have a center. the points on the outside are calculated by 
+            // center +/- height/2, +/- depth/2, and +/- width/2
+
+            let shortCent = [this.scene.models[1].center.data[0][0], this.scene.models[1].center.data[1][0], this.scene.models[1].center.data[2][0]]; // now [x, y, z]
+            let wo2 = this.scene.models[1].width / 2; // basically new x
+            let ho2 = this.scene.models[1].height / 2; // basically new y
+            let do2 = this.scene.models[1].depth / 2; // basically new z
+            
+            // new points
+            let frontBottomLeft = [shortCent[0]-wo2, shortCent[1]-ho2, shortCent[2]+do2];
+            let frontBottomRight = [shortCent[0]+wo2, shortCent[1]-ho2, shortCent[2]+do2];
+            let frontTopLeft = [shortCent[0]-wo2, shortCent[1]+ho2, shortCent[2]+do2];
+            let frontTopRight = [shortCent[0]+wo2, shortCent[1]+ho2, shortCent[2]+do2];
+
+            let backBottomLeft = [shortCent[0]-wo2, shortCent[1]-ho2, shortCent[2]-do2];
+            let backBottomRight = [shortCent[0]+wo2, shortCent[1]-ho2, shortCent[2]-do2];
+            let backTopLeft = [shortCent[0]-wo2, shortCent[1]+ho2, shortCent[2]-do2];
+            let backTopRight = [shortCent[0]+wo2, shortCent[1]+ho2, shortCent[2]-do2];
+
+            let vertices1 = this.scene.models[0].vertices;
+
+            let tester = new Matrix(4,4);
+
+            console.log("TEST : ", vertices1);
+            console.log("TEST2: ", vertices1[0]);
+            console.log("TEST3: ", tester);
+
+
+            let vertices = [frontBottomLeft, frontBottomRight, frontTopLeft, frontTopRight, 
+                            backBottomLeft, backBottomRight, backTopLeft, backTopRight];
+            // 
+            let edges = [
+                [0, 1, 3, 2, 0], // front face
+                [4, 5, 7, 6, 4], // back face
+                [0, 4], // bottom left connector
+                [2, 6], // top left connector
+                [1, 5], // bottom right connector
+                [3, 7] // top right connector
+            ]
+
+            for(let i=0; i<edges.length; i++){
+                for(let k = 0; k < edges[i].length-1; k++){
+                    // animation stuff
+                    //take each point of the edge and rotate it
+                    let v1Index = edges[i][k];
+                    let v1W = Matrix.multiply([Nper, this.rotate, vertices[v1Index]]);
+                    // console.log("TEST : ", Nper);
+                    // console.log("TEST1: ", vertices[v1Index]);
+                    // console.log("TEST2: ", vertices1);
+
+                    let v2Index = edges[i][(k+1)];
+                    let v2W = Matrix.multiply([Nper, this.rotate, vertices[v2Index]]);
+
+                    // clipping here
+                    let line = {pt0: v1W, pt1:v2W};
+                    //console.log("LINE: ", line);
+                    let zMin = zmin1;
+                    let returned = this.clipLinePerspective(line, zMin);
+
+                    if(returned != null){
+                        let Mper = mat4x4MPer();
+                        
+                        v1W = returned.pt0;
+                        v2W = returned.pt1;
+
+                        v1W = Matrix.multiply([view, Mper, v1W]);
+
+                        //console.log("v1W ", v1W);
+
+                        let finalVert1 = new Vector3((v1W.x / v1W.w), (v1W.y/ v1W.w));
+
+                        v2W = Matrix.multiply([view, Mper, v2W]);
+
+                        let finalVert2 = new Vector3((v2W.x / v2W.w), (v2W.y/ v2W.w));
+
+                        this.drawLine(finalVert1.x, finalVert1.y, finalVert2.x, finalVert2.y);
+                    }
+                }
+            }
+        }
+        // goes through the stuff for cone thingy
+        else if(this.model == 2){
+            for(let i=0; i<this.scene.models[0].edges.length; i++){
+                for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
+                    // animation stuff
+                    //take each point of the edge and rotate it
+                    let v1Index = this.scene.models[0].edges[i][k];
+                    let v1W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[v1Index]]);
+
+
+                    let v2Index = this.scene.models[0].edges[i][(k+1)];
+                    let v2W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[v2Index]]);
+
+                    // clipping here
+                    let line = {pt0: v1W, pt1:v2W};
+                    //console.log("LINE: ", line);
+                    let zMin = zmin1;
+                    let returned = this.clipLinePerspective(line, zMin);
+
+                    if(returned != null){
+                        let Mper = mat4x4MPer();
+                        
+                        v1W = returned.pt0;
+                        v2W = returned.pt1;
+
+                        v1W = Matrix.multiply([view, Mper, v1W]);
+
+                        //console.log("v1W ", v1W);
+
+                        let finalVert1 = new Vector3((v1W.x / v1W.w), (v1W.y/ v1W.w));
+
+                        v2W = Matrix.multiply([view, Mper, v2W]);
+
+                        let finalVert2 = new Vector3((v2W.x / v2W.w), (v2W.y/ v2W.w));
+
+                        this.drawLine(finalVert1.x, finalVert1.y, finalVert2.x, finalVert2.y);
+                    }
+                }
+            }
+        }
+        // goes through the stuff for cylinder thingy
+        else if(this.model == 3){
+            for(let i=0; i<this.scene.models[0].edges.length; i++){
+                for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
+                    // animation stuff
+                    //take each point of the edge and rotate it
+                    let v1Index = this.scene.models[0].edges[i][k];
+                    let v1W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[v1Index]]);
+
+
+                    let v2Index = this.scene.models[0].edges[i][(k+1)];
+                    let v2W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[v2Index]]);
+
+                    // clipping here
+                    let line = {pt0: v1W, pt1:v2W};
+                    //console.log("LINE: ", line);
+                    let zMin = zmin1;
+                    let returned = this.clipLinePerspective(line, zMin);
+
+                    if(returned != null){
+                        let Mper = mat4x4MPer();
+                        
+                        v1W = returned.pt0;
+                        v2W = returned.pt1;
+
+                        v1W = Matrix.multiply([view, Mper, v1W]);
+
+                        //console.log("v1W ", v1W);
+
+                        let finalVert1 = new Vector3((v1W.x / v1W.w), (v1W.y/ v1W.w));
+
+                        v2W = Matrix.multiply([view, Mper, v2W]);
+
+                        let finalVert2 = new Vector3((v2W.x / v2W.w), (v2W.y/ v2W.w));
+
+                        this.drawLine(finalVert1.x, finalVert1.y, finalVert2.x, finalVert2.y);
+                    }
+                }
+            }
+        }
+        // goes through the stuff for sphere thingy
+        else if(this.model == 4){
+            for(let i=0; i<this.scene.models[0].edges.length; i++){
+                for(let k = 0; k < this.scene.models[0].edges[i].length-1; k++){
+                    // animation stuff
+                    //take each point of the edge and rotate it
+                    let v1Index = this.scene.models[0].edges[i][k];
+                    let v1W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[v1Index]]);
+
+
+                    let v2Index = this.scene.models[0].edges[i][(k+1)];
+                    let v2W = Matrix.multiply([Nper, this.rotate, this.scene.models[0].vertices[v2Index]]);
+
+                    // clipping here
+                    let line = {pt0: v1W, pt1:v2W};
+                    //console.log("LINE: ", line);
+                    let zMin = zmin1;
+                    let returned = this.clipLinePerspective(line, zMin);
+
+                    if(returned != null){
+                        let Mper = mat4x4MPer();
+                        
+                        v1W = returned.pt0;
+                        v2W = returned.pt1;
+
+                        v1W = Matrix.multiply([view, Mper, v1W]);
+
+                        //console.log("v1W ", v1W);
+
+                        let finalVert1 = new Vector3((v1W.x / v1W.w), (v1W.y/ v1W.w));
+
+                        v2W = Matrix.multiply([view, Mper, v2W]);
+
+                        let finalVert2 = new Vector3((v2W.x / v2W.w), (v2W.y/ v2W.w));
+
+                        this.drawLine(finalVert1.x, finalVert1.y, finalVert2.x, finalVert2.y);
+                    }
                 }
             }
         }
