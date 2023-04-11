@@ -18,44 +18,10 @@ class Renderer {
         this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
-        this.model = 1; // <--- change this to change the model
+        this.model = 0; // <--- change this to change the model
         this.rotate = new Matrix(4,4);
         this.rotfactor = 0.001;
-
-        switch(this.scene.models[this.model].type)
-        {
-            case 'generic':
-                this.vertices = this.scene.models[0].vertices;
-                this.edges = this.scene.models[0].edges;
-                break;
-            case 'cube':
-                let cx = this.scene.models[1].center.x;
-                let cy = this.scene.models[1].center.y;
-                let cz = this.scene.models[1].center.z;
-
-                let w = (this.scene.models[1].width)/2;
-                let h = (this.scene.models[1].width)/2;
-                let d = (this.scene.models[1].width)/2;
-
-                this.vertices = [Vector4(cx-w,cy-d,cz+h,1),Vector4(cx-w,cy+d,cz+h,1),Vector4(cx+w,cy+d,cz+h,1),Vector4(cx+w,cy-d,cz+h,1),Vector4(cx-w,cy-d,cz-h,1),Vector4(cx-w,cy+d,cz-h,1),Vector4(cx+w,cy+d,cz-h,1),Vector4(cx+w,cy-d,cz-h,1)];
-                this.edges = [[0,1,2,3,0],
-                              [4,5,6,7,4],
-                              [0,4],
-                              [1,5],
-                              [2,6],
-                              [3,7]];
-                break;
-            case 'cone':
-                //TODO: Cone
-                break;
-            case 'cylinder':
-                //TODO: Cylinder
-                break;
-            case 'sphere':
-                //TODO: Sphere
-                break;
-            }
-            this.center = this.get_center();
+        this.center = [0,0,0];
     }
 
     //////////////////
@@ -74,7 +40,7 @@ class Renderer {
         mat4x4RotateX(x, this.rotfactor*time);
         mat4x4RotateY(y, this.rotfactor*time);
         mat4x4RotateZ(z, this.rotfactor*time);
-        this.rotate = Matrix.multiply([tb,x,y,z,to]);
+        this.rotate = Matrix.multiply([x,y,z]);
     }
 
     // Left arrow key: rotate SRP around the v-axis with the PRP as the origin NEGATIVE
@@ -96,7 +62,7 @@ class Renderer {
         // // console.log("PRP: ", this.scene.view.prp.x, this.scene.view.srp.y, this.scene.view.srp.z);
         // // console.log("SRP: ", this.scene.view.srp.x, this.scene.view.srp.y, this.scene.view.srp.z);
         // // need to calculate the vrc, but only n and u for now
-        // let VRC = this.calculateVRC(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup);
+        let VRC = this.calculateVRC(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup);
         // // console.log(VRC);
         // // console.log(VRC.u);
         // // console.log(VRC.u.data);
@@ -106,7 +72,7 @@ class Renderer {
         // // console.log(VRC.u.data[2][0]);
 
         // let test = mat4x4MPer();
-        // mat4x4Translate(test, VRC.u.data[0][0], VRC.u.data[1][0], VRC.u.data[2][0]);
+        //mat4x4Translate(test, VRC.u.data[0][0], VRC.u.data[1][0], VRC.u.data[2][0]);
 
         // let T = mat4x4MPer();
         // mat4x4Translate(T, (-1*this.scene.view.prp.x), (-1*this.scene.view.prp.y), (-1*this.scene.view.prp.z));
@@ -121,7 +87,7 @@ class Renderer {
         this.draw();
     }
 
-    // D key: translate the PRP and SRP along the u-axis
+    // D key: translate the PRP and SRP along the u-axis  /////////////!
     moveRight() {
         this.scene.view.prp.x = this.scene.view.prp.x + 1;
         this.scene.view.srp.x = this.scene.view.srp.x + 1;
@@ -224,37 +190,81 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
 
-        for(let i=0; i<this.edges.length; i++){
-            for(let k = 0; k < this.edges[i].length-1; k++){
-                //take each point of the edge and rotate it
+        //Get all the centers
+        this.scene.models.forEach(element => {
+            //this.center.push(get_center());
+        });
+
+        for(let elem=0;elem<this.scene.models.length;elem++) {
+            let element = this.scene.models[elem];
+            switch(element.type)
+            {
+                case 'generic':
+                    this.vertices = element.vertices;
+                    this.edges = element.edges;
+                    break;
+                case 'cube':
+                    let cx = element.center.x;
+                    let cy = element.center.y;
+                    let cz = element.center.z;
+
+                    let w = (element.width)/2;
+                    let h = (element.width)/2;
+                    let d = (element.width)/2;
+
+                    this.vertices = [Vector4(cx-w,cy-d,cz+h,1),Vector4(cx-w,cy+d,cz+h,1),Vector4(cx+w,cy+d,cz+h,1),Vector4(cx+w,cy-d,cz+h,1),Vector4(cx-w,cy-d,cz-h,1),Vector4(cx-w,cy+d,cz-h,1),Vector4(cx+w,cy+d,cz-h,1),Vector4(cx+w,cy-d,cz-h,1)];
+                    this.edges = [[0,1,2,3,0],
+                              [4,5,6,7,4],
+                              [0,4],
+                              [1,5],
+                              [2,6],
+                              [3,7]];
+                    break;
+            }
+            this.center = this.get_center();
+            //Update the center for rotation
+            for(let i=0; i<this.edges.length; i++){
+                for(let k = 0; k < this.edges[i].length-1; k++){
+                    //take each point of the edge and rotate it
                     
-                //console.log(this.vertices[this.edges[i][k]]);
-                let v1 = Matrix.multiply([Nper, this.rotate, this.vertices[this.edges[i][k]]]);
+                    let to = new Matrix(4,4);
+                    let tb = new Matrix(4,4);
+                    mat4x4Translate(to, -this.center[0], -this.center[1], -this.center[2]);
+                    mat4x4Translate(tb, this.center[0], this.center[1], this.center[2]);
 
-                let v2 = Matrix.multiply([Nper, this.rotate, this.vertices[this.edges[i][(k+1)]]]);
-                // clipping here
-                let line = {pt0: v1, pt1:v2};
-                let zMin = zmin1;
-                let clipped = this.clipLinePerspective(line, zMin);
+                    let v1 = Matrix.multiply([to,this.vertices[this.edges[i][k]]]);
+                    v1 = Matrix.multiply([this.rotate, v1]);
+                    v1 = Matrix.multiply([Nper, tb,v1]);
 
-                if(clipped != null){
-                    let Mper = mat4x4MPer();
+                    let v2 = Matrix.multiply([to,this.vertices[this.edges[i][(k+1)]]]);
+                    v2 = Matrix.multiply([this.rotate, v2]);
+                    v2 = Matrix.multiply([Nper,tb,v2]);
+
+                    // clipping here
+                    let line = {pt0: v1, pt1:v2};
+                    let zMin = zmin1;
+                    let clipped = this.clipLinePerspective(line, zMin);
+
+                    if(clipped != null){
+                        let Mper = mat4x4MPer();
                         
-                    v1 = clipped.pt0;
-                    v2 = clipped.pt1;
+                        v1 = clipped.pt0;
+                        v2 = clipped.pt1;
 
-                    v1 = Matrix.multiply([viewport, Mper, v1]);
+                        v1 = Matrix.multiply([viewport, Mper, v1]);
 
-                    let vert1 = new Vector3((v1.x / v1.w), (v1.y/ v1.w));
+                        let vert1 = new Vector3((v1.x / v1.w), (v1.y/ v1.w));
 
-                    v2 = Matrix.multiply([viewport, Mper, v2]);
+                        v2 = Matrix.multiply([viewport, Mper, v2]);
 
-                    let vert2 = new Vector3((v2.x / v2.w), (v2.y/ v2.w));
+                        let vert2 = new Vector3((v2.x / v2.w), (v2.y/ v2.w));
 
-                    this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
+                        this.drawLine(vert1.x, vert1.y, vert2.x, vert2.y);
+                    }
                 }
             }
         }
+        
     }
 
     // Get outcode for a vertex
@@ -538,6 +548,7 @@ class Renderer {
     //
     updateScene(scene) {
         this.scene = this.processScene(scene);
+        console.log(this.scene);
         if (!this.enable_animation) {
             this.draw();
         }

@@ -91,6 +91,7 @@ function init() {
                 height: 30,
                 depth: 30
             },
+            /*
             {
                 type: 'cone',
                 center: [], // 3 component [x, y, z]
@@ -114,6 +115,7 @@ function init() {
                 stacks: []  // (think number of latitude lines on a globe)
 
             },
+            */
         ]
     };
 
