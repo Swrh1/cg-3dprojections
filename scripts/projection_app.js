@@ -86,21 +86,21 @@ function init() {
             },
             {
                 type: 'cube',
-                center:[20.0, 0.0, -60.0], //3 component [x, y, z]
+                center:[-20.0, 50.0, -80.0], //3 component [x, y, z]
                 width: 30,
                 height: 30,
                 depth: 30
             },
             {
                 type: 'cone',
-                center: [20.0,0.0,-60.0], // 3 component [x, y, z]
+                center: [40.0,40.0,-60.0], // 3 component [x, y, z]
                 radius: 10,
                 height: 30,
                 sides: 10
             },
             {
                 type: 'cylinder',
-                center: [20.0,0.0,-60.0], // 3 component [x, y, z]
+                center: [40.0,0.0,-60.0], // 3 component [x, y, z]
                 radius: 10,
                 height: 30,
                 sides: 20
@@ -108,8 +108,8 @@ function init() {
             },
             {
                 type: 'sphere',
-                center: [20.0,0.0,-60.0], // 3 component [x, y, z]
-                radius: 10,
+                center: [-10.0,0.0,-60.0], // 3 component [x, y, z]
+                radius: 5,
                 slices: [10], // (think number of longitude lines on a globe)
                 stacks: [10]  // (think number of latitude lines on a globe)
 
