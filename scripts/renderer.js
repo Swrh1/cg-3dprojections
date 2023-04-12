@@ -15,7 +15,7 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
         this.model = 0; // <--- change this to change the model
@@ -30,10 +30,6 @@ class Renderer {
 
     //
     updateTransforms(time, delta_time) {
-        let to = new Matrix(4,4);
-        let tb = new Matrix(4,4);
-        mat4x4Translate(to, -this.center[0], -this.center[1], -this.center[2]);
-        mat4x4Translate(tb, this.center[0], this.center[1], this.center[2]);
         let x = new Matrix(4,4);
         let y = new Matrix(4,4);
         let z = new Matrix(4,4);
@@ -158,30 +154,6 @@ class Renderer {
         return [(max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2];
     }
 
-    add_circle(center, radius, sides)
-    {
-        let points = [];
-        let steps = sides;
-        let x,y;
-        for (let i = 0; i < steps; i++) {
-            x = Math.round(center.x + radius * Math.cos(2 * Math.PI * i / steps));
-            y = Math.round(center.y + radius * Math.sin(2 * Math.PI * i / steps));
-            points.push(Vector4(x,y,center.z,1));
-        }
-        let start = this.vertices.length;
-        //Add new points to vertices
-        points.forEach(element => {
-            this.vertices.push(element);
-        });
-        let new_edges = [];
-        for(let i=0;i<points.length;i++)
-        {
-            new_edges[i] = start+i;
-        }
-        new_edges.push(start);
-        this.edges.push(new_edges);
-    }
-
     //
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -297,7 +269,7 @@ class Renderer {
                     //Complete circle
                     et.push(0);
                     this.edges.push(et);
-                    
+
                     for(let i = 0;i<steps;i++)
                     {
                         x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
@@ -318,7 +290,47 @@ class Renderer {
                     {
                         this.edges.push([k, k+steps]);
                     }
-
+                    break;
+                case 'sphere':
+                    //Build the xy with z offset
+                    //Build the yz with x offset
+                    //(Math.abs(offset from origin)-radius)*element.radius
+                    this.vertices = [];
+                    this.edges = [];
+                    steps = 10;
+                    let circleVerts = [];
+                    for(let i = 0;i<steps;i++)
+                    {
+                        x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
+                        y = Math.round(element.center.y + element.radius * Math.sin(2 * Math.PI * i / steps));
+                        circleVerts.push(Vector4(x,y,element.center.z,1));
+                    }
+                    //We have a circle called circleVerts
+                    steps = element.slices;
+                    let rotFactor = 180/steps;
+                    //Roataional Matrix
+                    let rotMatrix = new Matrix(4,4);
+                    mat4x4RotateZ(rotMatrix,rotFactor);
+                    //Rotate all the points and make new circles
+                    for(let i=0; i<steps; i++)
+                    {
+                        //Rotate each point
+                        for(let j=0;j<circleVerts.length;j++)
+                        {
+                            circleVerts[j] = Matrix.multiply([rotMatrix, circleVerts[i]]);
+                        }
+                        //We need to record the current circle circleVerts in this.vertices and this.edges
+                        let size = this.vertices.length;
+                        circleVerts.forEach(element => {
+                            this.vertices.push(element);
+                        });
+                        et = [];
+                        for(let k=0;k<steps;k++)
+                        {
+                            et.push(k+size);
+                        }
+                        this.edges.push(et);
+                    }
                     break;
             }
             this.center = this.get_center();

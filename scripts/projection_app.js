@@ -60,6 +60,7 @@ function init() {
             clip: [-12, 6, -12, 6, 10, 100]
         },
         models: [
+            /*
             {
                 type: 'generic',
                 vertices: [
@@ -103,10 +104,10 @@ function init() {
                 center: [20.0,0.0,-60.0], // 3 component [x, y, z]
                 radius: 10,
                 height: 30,
-                sides: 10
+                sides: 20
 
             },
-            /*
+            */
             {
                 type: 'sphere',
                 center: [20.0,0.0,-60.0], // 3 component [x, y, z]
@@ -115,7 +116,6 @@ function init() {
                 stacks: [10]  // (think number of latitude lines on a globe)
 
             },
-            */
         ]
     };
 
