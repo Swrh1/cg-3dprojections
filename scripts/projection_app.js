@@ -60,7 +60,6 @@ function init() {
             clip: [-12, 6, -12, 6, 10, 100]
         },
         models: [
-            /*
             {
                 type: 'generic',
                 vertices: [
@@ -107,7 +106,6 @@ function init() {
                 sides: 20
 
             },
-            */
             {
                 type: 'sphere',
                 center: [20.0,0.0,-60.0], // 3 component [x, y, z]

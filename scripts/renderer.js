@@ -15,7 +15,7 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
         this.model = 0; // <--- change this to change the model
@@ -111,44 +111,44 @@ class Renderer {
         this.draw();
     }
 
-    get_center()
+    get_center(verts)
     {
-        let max_x = this.vertices[0].x;
-        let max_y = this.vertices[0].y;
-        let max_z = this.vertices[0].z;
-        let min_x = this.vertices[0].x;
-        let min_y = this.vertices[0].y;
-        let min_z = this.vertices[0].z;
-        for(let i=0;i<this.vertices.length;i++)
+        let max_x = verts[0].x;
+        let max_y = verts[0].y;
+        let max_z = verts[0].z;
+        let min_x = verts[0].x;
+        let min_y = verts[0].y;
+        let min_z = verts[0].z;
+        for(let i=0;i<verts.length;i++)
         {
-            if(this.vertices[i].x > max_x)
+            if(verts[i].x > max_x)
             {
-                max_x = this.vertices[i].x;
+                max_x = verts[i].x;
             }
 
-            if(this.vertices[i].y > max_y)
+            if(verts[i].y > max_y)
             {
-                max_y = this.vertices[i].y;
+                max_y = verts[i].y;
             }
 
-            if(this.vertices[i].z > max_z)
+            if(verts[i].z > max_z)
             {
-                max_z = this.vertices[i].z;
+                max_z = verts[i].z;
             }
 
-            if(this.vertices[i].x < min_x)
+            if(verts[i].x < min_x)
             {
-                min_x = this.vertices[i].x;
+                min_x = verts[i].x;
             }
 
-            if(this.vertices[i].y < min_y)
+            if(verts[i].y < min_y)
             {
-                min_y = this.vertices[i].y;
+                min_y = verts[i].y;
             }
 
-            if(this.vertices[i].z < min_z)
+            if(verts[i].z < min_z)
             {
-                min_z = this.vertices[i].z;
+                min_z = verts[i].z;
             }
         }
         return [(max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2];
@@ -304,20 +304,75 @@ class Renderer {
                         x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
                         y = Math.round(element.center.y + element.radius * Math.sin(2 * Math.PI * i / steps));
                         circleVerts.push(Vector4(x,y,element.center.z,1));
+                        console.log(x,y);
                     }
+                    let cent = this.get_center(circleVerts);
+                    console.log(cent);
                     //We have a circle called circleVerts
                     steps = element.slices;
                     let rotFactor = 180/steps;
-                    //Roataional Matrix
+
+                    //Roataional Matrix and translations
                     let rotMatrix = new Matrix(4,4);
-                    mat4x4RotateZ(rotMatrix,rotFactor);
+                    mat4x4RotateX(rotMatrix,rotFactor);
+                    let tro = new Matrix(4,4);
+                    mat4x4Translate(tro, -cent[0],-cent[1],-cent[2]);
+                    let trb = new Matrix(4,4);
+                    mat4x4Translate(trb, cent[0],cent[1],cent[2]);
+                    //rotMatrix = Matrix.multiply([trb,rotMatrix,tro]);
+                    
                     //Rotate all the points and make new circles
-                    for(let i=0; i<steps; i++)
+                    for(let i=0; i<=steps; i++)
                     {
                         //Rotate each point
                         for(let j=0;j<circleVerts.length;j++)
                         {
-                            circleVerts[j] = Matrix.multiply([rotMatrix, circleVerts[i]]);
+                            circleVerts[j] = Matrix.multiply([tro, circleVerts[j]]);
+                            circleVerts[j] = Matrix.multiply([rotMatrix, circleVerts[j]]);
+                            circleVerts[j] = Matrix.multiply([trb, circleVerts[j]]);
+                        }
+                        //We need to record the current circle circleVerts in this.vertices and this.edges
+                        let size = this.vertices.length;
+                        circleVerts.forEach(element => {
+                            this.vertices.push(element);
+                        });
+                        et = [];
+                        for(let k=0;k<steps;k++)
+                        {
+                            et.push(k+size);
+                        }
+                        this.edges.push(et);
+                    }
+                    ////////////////////////////////////////
+                    steps = element.stacks;
+                    circleVerts = [];
+                    for(let i = 0;i<steps;i++)
+                    {
+                        x = Math.round(element.center.x + element.radius * Math.cos(2 * Math.PI * i / steps));
+                        y = Math.round(element.center.y + element.radius * Math.sin(2 * Math.PI * i / steps));
+                        circleVerts.push(Vector4(x,y,element.center.z,1));
+                        console.log(x,y);
+                    }
+                    cent = this.get_center(circleVerts);
+                    console.log(cent);
+                    //We have a circle called circleVerts
+                    steps = element.slices;
+                    rotFactor = 180/steps;
+
+                    //Roataional Matrix and translations
+                    rotMatrix = new Matrix(4,4);
+                    mat4x4RotateY(rotMatrix,rotFactor);
+                    //rotMatrix = Matrix.multiply([trb,rotMatrix,tro]);
+                    
+                    //Rotate all the points and make new circles
+                    for(let i=0; i<=steps; i++)
+                    {
+                        //Rotate each point
+                        for(let j=0;j<circleVerts.length;j++)
+                        {
+                            circleVerts[j] = Matrix.multiply([tro, circleVerts[j]]);
+                            circleVerts[j] = Matrix.multiply([rotMatrix, circleVerts[j]]);
+                            circleVerts[j] = Matrix.multiply([trb, circleVerts[j]]);
                         }
                         //We need to record the current circle circleVerts in this.vertices and this.edges
                         let size = this.vertices.length;
@@ -333,7 +388,7 @@ class Renderer {
                     }
                     break;
             }
-            this.center = this.get_center();
+            this.center = this.get_center(this.vertices);
             //Update the center for rotation
             for(let i=0; i<this.edges.length; i++){
                 for(let k = 0; k < this.edges[i].length-1; k++){
