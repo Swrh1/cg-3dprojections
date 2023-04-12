@@ -44,6 +44,7 @@ class Renderer {
         let u_axis = this.scene.view.vup.cross(this.scene.view.srp);
         u_axis.normalize();
         this.scene.view.vup = this.scene.view.vup.subtract(u_axis);
+        this.draw();
     }
 
     // Right arrow key: rotate SRP around the v-axis with the PRP as the origin POSITIVE
@@ -53,61 +54,46 @@ class Renderer {
         let u_axis = this.scene.view.vup.cross(this.scene.view.srp);
         u_axis.normalize();
         this.scene.view.vup = this.scene.view.vup.add(u_axis);
+        this.draw();
     }
 
     // A key: translate the PRP and SRP along the u-axis
     moveLeft() {
-        
-        // // this.scene.view.prp.x or this.scene.view.prp.y etc
-        // // console.log("PRP: ", this.scene.view.prp.x, this.scene.view.srp.y, this.scene.view.srp.z);
-        // // console.log("SRP: ", this.scene.view.srp.x, this.scene.view.srp.y, this.scene.view.srp.z);
-        // // need to calculate the vrc, but only n and u for now
-        //let VRC = this.calculateVRC(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup);
-        // // console.log(VRC);
-        // // console.log(VRC.u);
-        // // console.log(VRC.u.data);
-        // // console.log(VRC.u.data[0]);
-        // // console.log(VRC.u.data[0][0]);
-        // // console.log(VRC.u.data[1][0]);
-        // // console.log(VRC.u.data[2][0]);
-
-        // let test = mat4x4MPer();
-        //mat4x4Translate(test, VRC.u.data[0][0], VRC.u.data[1][0], VRC.u.data[2][0]);
-
-        // let T = mat4x4MPer();
-        // mat4x4Translate(T, (-1*this.scene.view.prp.x), (-1*this.scene.view.prp.y), (-1*this.scene.view.prp.z));
-        // // console.log(T);
-
-        // // console.log("PRP before: ", this.scene.view.prp.x, this.scene.view.srp.y, this.scene.view.srp.z);
-        // // console.log("SRP before: ", this.scene.view.srp.x, this.scene.view.srp.y, this.scene.view.srp.z);
-
-        this.scene.view.prp.x = this.scene.view.prp.x - 1;
-        this.scene.view.srp.x = this.scene.view.srp.x - 1;
-
+        let n_axis = this.scene.view.prp.subtract(this.scene.view.srp);
+        n_axis.normalize();
+        let u_axis = this.scene.view.vup.cross(n_axis);
+        u_axis.normalize();
+        this.scene.view.srp = this.scene.view.srp.subtract(u_axis);
+        this.scene.view.prp = this.scene.view.prp.subtract(u_axis);
         this.draw();
     }
 
     // D key: translate the PRP and SRP along the u-axis  /////////////!
     moveRight() {
-        this.scene.view.prp.x = this.scene.view.prp.x + 1;
-        this.scene.view.srp.x = this.scene.view.srp.x + 1;
-
+        let n_axis = this.scene.view.prp.subtract(this.scene.view.srp);
+        n_axis.normalize();
+        let u_axis = this.scene.view.vup.cross(n_axis);
+        u_axis.normalize();
+        this.scene.view.srp = this.scene.view.srp.add(u_axis);
+        this.scene.view.prp = this.scene.view.prp.add(u_axis);
         this.draw();
     }
 
     // S key: translate the PRP and SRP along the n-axis
     moveBackward() {
-        this.scene.view.prp.y = this.scene.view.prp.y - 1;
-        this.scene.view.srp.y = this.scene.view.srp.y -1;
-
+        let n_axis = this.scene.view.prp.subtract(this.scene.view.srp);
+        n_axis.normalize();
+        this.scene.view.srp = this.scene.view.srp.add(n_axis);
+        this.scene.view.prp = this.scene.view.prp.add(n_axis);
         this.draw();
     }
 
     // W key: translate the PRP and SRP along the n-axis
     moveForward() {
-        this.scene.view.prp.y = this.scene.view.prp.y + 1;
-        this.scene.view.srp.y = this.scene.view.srp.y + 1;
-
+        let n_axis = this.scene.view.prp.subtract(this.scene.view.srp);
+        n_axis.normalize();
+        this.scene.view.srp = this.scene.view.srp.subtract(n_axis);
+        this.scene.view.prp = this.scene.view.prp.subtract(n_axis);
         this.draw();
     }
 
